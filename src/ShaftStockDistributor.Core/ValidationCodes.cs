@@ -31,6 +31,8 @@ public static class ValidationCodes
     public const string ScenarioName = "ScenarioName";
     public const string UnknownArticle = "UnknownArticle";
     public const string DuplicateAddress = "DuplicateAddress";
+    public const string AddressOutsideLayout = "AddressOutsideLayout";
+    public const string AssignmentIncomplete = "AssignmentIncomplete";
 }
 
 public static class ValidationText
@@ -71,6 +73,8 @@ public static class ValidationText
             ValidationCodes.ScenarioName => "Every scenario needs a name.",
             ValidationCodes.UnknownArticle => $"Shaft {A(0)} points at unknown article '{A(1)}'.",
             ValidationCodes.DuplicateAddress => $"Shaft {A(0)} is listed more than once.",
+            ValidationCodes.AddressOutsideLayout => $"Shaft {A(0)} is outside the current layout.",
+            ValidationCodes.AssignmentIncomplete => "The assignment does not cover every shaft in the layout.",
             _ => issue.Message
         };
     }

@@ -75,6 +75,22 @@ public sealed class ScreenshotTests
         shell.ShowPageCommand.Execute("Study");
         await SettleAsync();
         Save(window, "scenario-study-wide.png", 1920);
+
+        await Resize(window, 1280, 800);
+        shell.ShowPageCommand.Execute("Articles");
+        shell.Articles.GenerateCount = 100;
+        shell.Articles.PercentA = 20;
+        shell.Articles.PercentB = 30;
+        shell.Articles.PercentC = 50;
+        shell.Articles.SeedText = "1";
+        shell.Articles.ReplaceExisting = true;
+        shell.Articles.RequestGenerateCommand.Execute(null);
+        Assert.True(shell.Articles.ReplaceConfirmationVisible);
+        Assert.Contains(shell.Project.Articles, article => article.Id == "EX-A-HALF-LITER");
+        await SettleAsync();
+        Save(window, "article-generator.png", 1280);
+        shell.Articles.CancelGenerateCommand.Execute(null);
+        Assert.False(shell.Articles.ReplaceConfirmationVisible);
     }
 
     private static async Task CapturePage(ShellViewModel shell, Window window, string page, string fileName)

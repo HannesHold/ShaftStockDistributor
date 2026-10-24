@@ -5,96 +5,96 @@
              xmlns:controls="using:ShaftStockDistributor.Desktop.Controls"
              x:Class="ShaftStockDistributor.Desktop.Views.LiveDemoView"
              x:DataType="vm:LiveDemoViewModel">
-  <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="8">
-    <Grid ColumnDefinitions="*,Auto">
-      <StackPanel>
-        <TextBlock Text="{x:Static local:UiText.NavLive}" Classes="h1" />
-        <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
-      </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-        <Border Classes="chip" IsVisible="{Binding SharedLocked}">
-          <TextBlock Text="{x:Static local:UiText.SharedLock}" Foreground="#F0A202" />
-        </Border>
-        <Border Classes="chip" IsVisible="{Binding ShuttleWaiting}">
-          <TextBlock Text="{x:Static local:UiText.Waiting}" Foreground="#E85D75" />
-        </Border>
-        <TextBlock Text="{Binding TimeText}" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-      </StackPanel>
-    </Grid>
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="8">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel>
+          <TextBlock Text="{x:Static local:UiText.NavLive}" Classes="h1" />
+          <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <Border Classes="chip" IsVisible="{Binding SharedLocked}">
+            <TextBlock Text="{x:Static local:UiText.SharedLock}" Foreground="#F0A202" />
+          </Border>
+          <Border Classes="chip" IsVisible="{Binding ShuttleWaiting}">
+            <TextBlock Text="{x:Static local:UiText.Waiting}" Foreground="#E85D75" />
+          </Border>
+          <TextBlock Text="{Binding TimeText}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+        </StackPanel>
+      </Grid>
 
-    <UniformGrid Grid.Row="1" Columns="6">
-      <Border Classes="card" Margin="0,0,8,0" Padding="10">
-        <StackPanel>
-          <TextBlock Text="{x:Static local:UiText.PalletsPerHour}" Classes="muted" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding PalletsPerHourText}" FontSize="26" FontWeight="Bold" />
-          <TextBlock Text="{Binding RateCaption}" Classes="muted" TextWrapping="NoWrap" />
-        </StackPanel>
-      </Border>
-      <Border Classes="card" Margin="0,0,8,0" Padding="10">
-        <StackPanel>
-          <TextBlock Text="{x:Static local:UiText.TotalPallets}" Classes="muted" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding TotalPalletsText}" FontSize="26" FontWeight="Bold" />
-          <TextBlock Text="{Binding OpeningIncludedNote}" Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasOpeningInventory}" />
-        </StackPanel>
-      </Border>
-      <Border Classes="card" Margin="0,0,8,0" Padding="10">
-        <StackPanel>
-          <TextBlock Text="{x:Static local:UiText.Offered}" Classes="muted" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding OfferedText}" FontSize="26" FontWeight="Bold" />
-        </StackPanel>
-      </Border>
-      <Border Classes="card" Margin="0,0,8,0" Padding="10">
-        <ToolTip.Tip>
-          <TextBlock MaxWidth="320" TextWrapping="Wrap" Text="{x:Static local:UiText.UpperBoundTip}" />
-        </ToolTip.Tip>
-        <StackPanel>
-          <TextBlock Text="{x:Static local:UiText.TheoreticalCapacity}" Classes="muted" TextWrapping="Wrap" />
-          <TextBlock Text="{Binding TheoreticalText}" FontSize="26" FontWeight="Bold" />
-        </StackPanel>
-      </Border>
-      <Border Classes="card" Margin="0,0,8,0" Padding="10">
-        <StackPanel Spacing="2">
-          <TextBlock Text="{x:Static local:UiText.Utilization}" Classes="muted" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" Text="{Binding Util1Text, StringFormat='Shuttle 1 {0}'}" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" Text="{Binding Util2Text, StringFormat='Shuttle 2 {0}'}" TextWrapping="Wrap" />
-        </StackPanel>
-      </Border>
-      <Border Classes="card" Padding="10">
-        <StackPanel Spacing="2">
-          <TextBlock Classes="muted" Text="{Binding LostText, StringFormat='Lost crates {0}'}" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" Text="{Binding WaitText, StringFormat='Wait {0}'}" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" Text="{Binding PullsText, StringFormat='Pulls {0}'}" TextWrapping="Wrap" />
-          <TextBlock Classes="muted" Text="{Binding BlockedText, StringFormat='Blocked {0}'}" TextWrapping="Wrap" />
-        </StackPanel>
-      </Border>
-    </UniformGrid>
-
-    <Border Grid.Row="2" Classes="card" Padding="4" MinHeight="160">
-      <controls:WarehouseCanvas Snapshot="{Binding Snapshot}"
-                                ShowHeatmap="{Binding ShowHeatmap}"
-                                SelectedAddress="{Binding SelectedAddress}"
-                                ShaftClickCommand="{Binding SelectShaftCommand}" />
-    </Border>
-
-    <ItemsControl Grid.Row="3" ItemsSource="{Binding Legend}">
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <WrapPanel />
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-      <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="vm:LegendItem">
-          <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,4">
-            <Border Width="12" Height="12" CornerRadius="2" Background="{Binding ColorHex, Converter={StaticResource HexBrush}}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding Name}" Classes="muted" VerticalAlignment="Center" />
+      <UniformGrid Columns="6">
+        <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
+          <StackPanel Spacing="0">
+            <TextBlock Text="{x:Static local:UiText.PalletsPerHour}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding PalletsPerHourText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding RateCaption}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
           </StackPanel>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
+        </Border>
+        <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
+          <StackPanel Spacing="0">
+            <TextBlock Text="{x:Static local:UiText.TotalPallets}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding TotalPalletsText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding OpeningIncludedNote}" Classes="muted" FontSize="11" TextWrapping="Wrap" IsVisible="{Binding HasOpeningInventory}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
+          <StackPanel Spacing="0">
+            <TextBlock Text="{x:Static local:UiText.Offered}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding OfferedText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
+          <ToolTip.Tip>
+            <TextBlock MaxWidth="320" TextWrapping="Wrap" Text="{x:Static local:UiText.UpperBoundTip}" />
+          </ToolTip.Tip>
+          <StackPanel Spacing="0">
+            <TextBlock Text="{x:Static local:UiText.TheoreticalCapacity}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding TheoreticalText}" FontSize="16" FontWeight="Bold" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
+          <StackPanel Spacing="0">
+            <TextBlock Text="{x:Static local:UiText.Utilization}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding Util1Text, StringFormat='Shuttle 1 {0}'}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding Util2Text, StringFormat='Shuttle 2 {0}'}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Padding="8,6">
+          <StackPanel Spacing="0">
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding LostText, StringFormat='Lost {0}'}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding WaitText, StringFormat='Wait {0}'}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding PullsText, StringFormat='Pulls {0}'}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding BlockedText, StringFormat='Blocked {0}'}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </UniformGrid>
 
-    <Grid Grid.Row="4" ColumnDefinitions="*,400" ColumnSpacing="12">
+      <Border Classes="card" Padding="4" MinHeight="300" Height="320">
+        <controls:WarehouseCanvas Snapshot="{Binding Snapshot}"
+                                  ShowHeatmap="{Binding ShowHeatmap}"
+                                  SelectedAddress="{Binding SelectedAddress}"
+                                  ShaftClickCommand="{Binding SelectShaftCommand}" />
+      </Border>
+
+      <ItemsControl ItemsSource="{Binding Legend}" Margin="4,0,0,0">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:LegendItem">
+            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,0,14,4">
+              <Border Width="12" Height="12" CornerRadius="2" Background="{Binding ColorHex, Converter={StaticResource HexBrush}}" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding Name}" Classes="muted" VerticalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
       <WrapPanel>
-        <Border Classes="card" Width="300" Margin="0,0,12,0" Padding="10">
+        <Border Classes="card" Width="280" Margin="0,0,8,8" Padding="10">
           <StackPanel Spacing="8">
             <TextBlock Text="{x:Static local:UiText.Playback}" FontWeight="SemiBold" />
             <WrapPanel>
@@ -108,7 +108,7 @@
             <Slider Minimum="1" Maximum="400" Value="{Binding Speed}" />
           </StackPanel>
         </Border>
-        <Border Classes="card" Width="300" Margin="0,0,12,0" Padding="10">
+        <Border Classes="card" Width="280" Margin="0,0,8,8" Padding="10">
           <StackPanel Spacing="8">
             <TextBlock Text="{x:Static local:UiText.SimulationSettings}" FontWeight="SemiBold" />
             <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
@@ -122,30 +122,31 @@
               </StackPanel>
             </Grid>
             <TextBlock Text="{x:Static local:UiText.Scenario}" Classes="field" />
-            <ComboBox MinWidth="180" HorizontalAlignment="Stretch" ItemsSource="{Binding Scenarios}" SelectedItem="{Binding SelectedScenario}" />
+            <ComboBox MinWidth="160" HorizontalAlignment="Stretch" ItemsSource="{Binding Scenarios}" SelectedItem="{Binding SelectedScenario}" />
             <Button HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Command="{Binding ApplyScenarioCommand}" />
           </StackPanel>
         </Border>
-        <Border Classes="card" Width="300" Margin="0,0,12,0" Padding="10">
+        <Border Classes="card" Width="280" Margin="0,0,8,8" Padding="10">
           <StackPanel Spacing="8">
             <TextBlock Text="{x:Static local:UiText.ShaftAssignment}" FontWeight="SemiBold" />
             <TextBlock Text="{Binding SelectedSummary}" TextWrapping="Wrap" />
-            <ComboBox MinWidth="180" HorizontalAlignment="Stretch" ItemsSource="{Binding ArticleChoices}" SelectedItem="{Binding SelectedChoice}" />
+            <ComboBox MinWidth="160" HorizontalAlignment="Stretch" ItemsSource="{Binding ArticleChoices}" SelectedItem="{Binding SelectedChoice}" />
             <CheckBox Content="{x:Static local:UiText.Pin}" IsChecked="{Binding SelectedPinned}" />
             <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyAssignment}" Command="{Binding ApplyShaftCommand}" />
           </StackPanel>
         </Border>
+        <Border Classes="card" Width="340" Margin="0,0,0,8" Padding="10">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.SteadyRate}" FontWeight="SemiBold" />
+            <TextBlock DockPanel.Dock="Top" Text="{Binding RateCaption}" Classes="muted" Margin="0,2,0,6" TextWrapping="Wrap" />
+            <controls:RateChart MinHeight="120"
+                                Height="140"
+                                Samples="{Binding RateSamples}"
+                                Offered="{Binding OfferedRate}"
+                                SpanMinutes="{Binding ChartSpanMinutes}" />
+          </DockPanel>
+        </Border>
       </WrapPanel>
-      <Border Grid.Column="1" Classes="card" Padding="10">
-        <DockPanel>
-          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.SteadyRate}" FontWeight="SemiBold" />
-          <TextBlock DockPanel.Dock="Top" Text="{Binding RateCaption}" Classes="muted" Margin="0,2,0,6" TextWrapping="Wrap" />
-          <controls:RateChart MinHeight="140"
-                              Samples="{Binding RateSamples}"
-                              Offered="{Binding OfferedRate}"
-                              SpanMinutes="{Binding ChartSpanMinutes}" />
-        </DockPanel>
-      </Border>
-    </Grid>
-  </Grid>
+    </StackPanel>
+  </ScrollViewer>
 </UserControl>

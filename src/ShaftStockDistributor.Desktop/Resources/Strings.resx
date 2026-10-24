@@ -18,7 +18,12 @@
   <data name="Save" xml:space="preserve"><value>Save</value></data>
   <data name="ExportJson" xml:space="preserve"><value>Export JSON</value></data>
   <data name="ExportCsv" xml:space="preserve"><value>Export CSV</value></data>
-  <data name="StartDemo" xml:space="preserve"><value>Start demo</value></data>
+  <data name="StartDemo" xml:space="preserve"><value>Run simulation</value></data>
+  <data name="LoadExample" xml:space="preserve"><value>Load example</value></data>
+  <data name="LoadExampleTitle" xml:space="preserve"><value>Load the example project?</value></data>
+  <data name="LoadExampleBody" xml:space="preserve"><value>The current project has unsaved changes. Loading the example warehouse replaces the layout, articles, and assignment.</value></data>
+  <data name="LoadExampleConfirm" xml:space="preserve"><value>Load example</value></data>
+  <data name="ReoptimizedForLayout" xml:space="preserve"><value>The assignment did not match the layout, so this project was optimized again.</value></data>
   <data name="ModeAutomatic" xml:space="preserve"><value>Automatic assignment</value></data>
   <data name="ModeManual" xml:space="preserve"><value>Manual assignment</value></data>
   <data name="ModeConfirmTitle" xml:space="preserve"><value>Switch assignment mode?</value></data>
@@ -79,6 +84,24 @@
   <data name="Apply" xml:space="preserve"><value>Apply</value></data>
   <data name="AddArticle" xml:space="preserve"><value>Add article</value></data>
   <data name="RemoveArticle" xml:space="preserve"><value>Remove</value></data>
+  <data name="GeneratorTitle" xml:space="preserve"><value>Generate articles</value></data>
+  <data name="GeneratorHint" xml:space="preserve"><value>Each article takes a configured crate type. A movers get a higher demand than B movers, and B higher than C. The shaft assignment is cleared so you can optimize again.</value></data>
+  <data name="Generate" xml:space="preserve"><value>Generate</value></data>
+  <data name="ArticleCount" xml:space="preserve"><value>Article count</value></data>
+  <data name="PercentA" xml:space="preserve"><value>A movers %</value></data>
+  <data name="PercentB" xml:space="preserve"><value>B movers %</value></data>
+  <data name="PercentC" xml:space="preserve"><value>C movers %</value></data>
+  <data name="ReplaceExisting" xml:space="preserve"><value>Replace existing articles</value></data>
+  <data name="OptionalSeed" xml:space="preserve"><value>Seed (optional)</value></data>
+  <data name="GeneratorPercentSum" xml:space="preserve"><value>A, B, and C percentages must add up to 100%.</value></data>
+  <data name="GeneratorCount" xml:space="preserve"><value>Enter an article count from 1 to 2000.</value></data>
+  <data name="GeneratorPercent" xml:space="preserve"><value>Percentages cannot be negative.</value></data>
+  <data name="GeneratorNoCrateTypes" xml:space="preserve"><value>No crate types are configured.</value></data>
+  <data name="GeneratorSeed" xml:space="preserve"><value>Seed must be a whole number, or leave it blank.</value></data>
+  <data name="GeneratorReplaceTitle" xml:space="preserve"><value>Replace the article list?</value></data>
+  <data name="GeneratorReplaceBody" xml:space="preserve"><value>This removes the current articles and clears the shaft assignment. The layout and scenarios stay as they are.</value></data>
+  <data name="ReplaceArticles" xml:space="preserve"><value>Replace articles</value></data>
+  <data name="GeneratedArticles" xml:space="preserve"><value>Generated {0} articles (A {1}, B {2}, C {3}). The shaft assignment was cleared. Run the optimizer to place them.</value></data>
   <data name="ArticleId" xml:space="preserve"><value>Id</value></data>
   <data name="ArticleName" xml:space="preserve"><value>Name</value></data>
   <data name="ClassLabel" xml:space="preserve"><value>ABC class</value></data>
@@ -90,6 +113,8 @@
   <data name="Offset" xml:space="preserve"><value>Offset (crates)</value></data>
   <data name="Weight" xml:space="preserve"><value>Class weight</value></data>
   <data name="Inflow" xml:space="preserve"><value>Inflow (crates/h)</value></data>
+  <data name="InflowUpdated" xml:space="preserve"><value>Inflow updated for {0}. Playback restarted so arrivals use the new rate. Run the optimizer if the shaft plan should follow this demand.</value></data>
+  <data name="ArticleUpdated" xml:space="preserve"><value>Updated {0}.</value></data>
   <data name="Color" xml:space="preserve"><value>Color</value></data>
   <data name="RunOptimizer" xml:space="preserve"><value>Run optimizer</value></data>
   <data name="Iterations" xml:space="preserve"><value>Iterations</value></data>
@@ -118,7 +143,7 @@
   <data name="ValidationTitle" xml:space="preserve"><value>Checks</value></data>
   <data name="NoIssues" xml:space="preserve"><value>No validation issues.</value></data>
   <data name="StatusReady" xml:space="preserve"><value>Ready</value></data>
-  <data name="DemoHint" xml:space="preserve"><value>Example inflows are hypothetical. Start the demo to watch both shuttles work the rack.</value></data>
+  <data name="DemoHint" xml:space="preserve"><value>Run simulation plays the current project. Load example project restores the sample warehouse.</value></data>
   <data name="ZoneShuttle1" xml:space="preserve"><value>Shuttle 1 only</value></data>
   <data name="ZoneShared" xml:space="preserve"><value>Shared middle</value></data>
   <data name="ZoneShuttle2" xml:space="preserve"><value>Shuttle 2 only</value></data>
@@ -169,4 +194,6 @@
   <data name="Validation_SegmentCount" xml:space="preserve"><value>Segment count must be at least 1.</value></data>
   <data name="Validation_LevelAboveTypical" xml:space="preserve"><value>This layout has more than 5 levels. The usual rack has at most 5.</value></data>
   <data name="Validation_ShaftAboveTypical" xml:space="preserve"><value>This layout has more than 9 shafts on a level. The usual rack has at most 9.</value></data>
+  <data name="Validation_AddressOutsideLayout" xml:space="preserve"><value>Shaft {0} is outside the current layout.</value></data>
+  <data name="Validation_AssignmentIncomplete" xml:space="preserve"><value>The assignment does not cover every shaft in the layout.</value></data>
 </root>

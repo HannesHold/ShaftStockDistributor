@@ -230,6 +230,9 @@ public sealed class DistributorProject
 
     public List<Article> Articles { get; set; } = new();
 
+    /// <summary>Crate sizes the article generator may assign. Empty means the built-in catalog.</summary>
+    public List<CrateType> CrateTypes { get; set; } = new();
+
     public List<ShaftAssignment> Assignments { get; set; } = new();
 
     public List<InflowScenario> Scenarios { get; set; } = new();

@@ -14,7 +14,6 @@ public partial class LiveDemoViewModel : ObservableObject
 {
     private readonly IMessenger _messenger;
     private readonly IOptimizerService _optimizer;
-    private readonly IProjectStore _store;
     private SimulationSession? _session;
     private DistributorProject? _project;
     private ShaftAddress? _selected;
@@ -22,11 +21,10 @@ public partial class LiveDemoViewModel : ObservableObject
     private readonly PalletRateWindow _rate = new();
     private readonly Queue<double> _sampleTimes = new();
 
-    public LiveDemoViewModel(IMessenger messenger, IUiClock clock, IOptimizerService optimizer, IProjectStore store)
+    public LiveDemoViewModel(IMessenger messenger, IUiClock clock, IOptimizerService optimizer)
     {
         _messenger = messenger;
         _optimizer = optimizer;
-        _store = store;
         messenger.Register<ProjectChangedMessage>(this, (_, message) => AcceptProject(message.Project));
         _ = clock.Every(TimeSpan.FromMilliseconds(33), OnTick);
     }
@@ -75,16 +73,38 @@ public partial class LiveDemoViewModel : ObservableObject
     [ObservableProperty] private bool _sharedLocked;
     [ObservableProperty] private bool _shuttleWaiting;
 
-    public async Task<DistributorProject> BuildDemoAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// When the stored plan points outside the layout or at an unknown article, optimize this project.
+    /// Returns true when a new plan was written. The example warehouse is never loaded here.
+    /// </summary>
+    public async Task<bool> RepairAssignmentIfNeededAsync(CancellationToken cancellationToken)
     {
+        if (_project is null || AssignmentFit.MatchesLayout(_project))
+        {
+            EnsureSession();
+            return false;
+        }
+
         IsBusy = true;
         Status = UiText.OptimizerRunning;
         try
         {
-            var project = _store.CreateExample();
-            var optimized = await _optimizer.OptimizeAsync(project, 180, null, cancellationToken);
-            ProjectGrid.ReplaceAssignments(project, optimized.Assignments);
-            return project;
+            foreach (var slot in _project.Assignments)
+            {
+                if (!string.IsNullOrEmpty(slot.ArticleId) && _project.FindArticle(slot.ArticleId) is null)
+                {
+                    slot.ArticleId = null;
+                    slot.Pinned = false;
+                }
+            }
+
+            ProjectGrid.EnsureFullGrid(_project);
+            int iterations = Math.Max(1, _project.Optimizer.Iterations);
+            var optimized = await _optimizer.OptimizeAsync(_project, iterations, null, cancellationToken);
+            ProjectGrid.ReplaceAssignments(_project, optimized.Assignments);
+            AssignmentPlan.RememberInflows(_project);
+            _messenger.Send(new ProjectChangedMessage { Project = _project });
+            return true;
         }
         finally
         {

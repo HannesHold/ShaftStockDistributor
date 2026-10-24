@@ -62,7 +62,11 @@ public partial class ShellViewModel : ObservableObject
     [ObservableProperty] private bool _isExample;
     [ObservableProperty] private string _modeText = UiText.ModeAutomatic;
     [ObservableProperty] private bool _modeConfirmationVisible;
+    [ObservableProperty] private bool _loadExampleConfirmationVisible;
+    [ObservableProperty] private bool _hasUnsavedChanges;
     [ObservableProperty] private string _issueSummary = UiText.NoIssues;
+
+    private string _cleanSnapshot = "";
 
     public bool IsLiveSelected => Page == "Live";
     public bool IsLayoutSelected => Page == "Layout";
@@ -102,11 +106,35 @@ public partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private async Task StartDemoAsync(CancellationToken cancellationToken)
     {
-        var project = await _live.BuildDemoAsync(cancellationToken);
-        Adopt(project);
+        bool repaired = await _live.RepairAssignmentIfNeededAsync(cancellationToken);
         _live.PlayCommand.Execute(null);
         ShowPage("Live");
-        Status = UiText.StatusReady;
+        string status = repaired ? UiText.ReoptimizedForLayout : UiText.StatusReady;
+        Status = status;
+        _live.Status = status;
+    }
+
+    [RelayCommand]
+    private void LoadExample()
+    {
+        RefreshDirty();
+        if (HasUnsavedChanges)
+        {
+            LoadExampleConfirmationVisible = true;
+            return;
+        }
+
+        ApplyExample();
+    }
+
+    [RelayCommand]
+    private void CancelLoadExample() => LoadExampleConfirmationVisible = false;
+
+    [RelayCommand]
+    private void ConfirmLoadExample()
+    {
+        LoadExampleConfirmationVisible = false;
+        ApplyExample();
     }
 
     [RelayCommand]
@@ -139,6 +167,7 @@ public partial class ShellViewModel : ObservableObject
         }
 
         _store.Save(path, Project);
+        MarkClean();
         Status = UiText.Saved;
     }
 
@@ -169,7 +198,30 @@ public partial class ShellViewModel : ObservableObject
     public void Adopt(DistributorProject project)
     {
         Project = project;
+        MarkClean();
         _messenger.Send(new ProjectChangedMessage { Project = project });
+    }
+
+    private void ApplyExample()
+    {
+        Adopt(PrepareExample(_store));
+        ShowPage("Live");
+        Status = UiText.StatusReady;
+    }
+
+    private void MarkClean()
+    {
+        _cleanSnapshot = ProjectSerializer.Serialize(Project);
+        HasUnsavedChanges = false;
+    }
+
+    private void RefreshDirty()
+    {
+        bool dirty = !string.Equals(ProjectSerializer.Serialize(Project), _cleanSnapshot, StringComparison.Ordinal);
+        if (dirty != HasUnsavedChanges)
+        {
+            HasUnsavedChanges = dirty;
+        }
     }
 
     private void Note(DistributorProject project)
@@ -189,6 +241,7 @@ public partial class ShellViewModel : ObservableObject
         }
 
         IssueSummary = Issues.Count == 0 ? UiText.NoIssues : Issues.Count + " checks";
+        RefreshDirty();
     }
 
     private async Task ExportAsync(string contents, string name, string extension)

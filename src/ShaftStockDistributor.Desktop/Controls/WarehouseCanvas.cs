@@ -75,7 +75,7 @@ public sealed class WarehouseCanvas : Control
         const double padL = 36;
         const double padR = 16;
         const double padT = 28;
-        const double padB = 22;
+        const double padB = 36;
         var plot = new Rect(padL, padT, Math.Max(10, bounds.Width - padL - padR), Math.Max(10, bounds.Height - padT - padB));
         double segmentGapPx = Math.Clamp(plot.Width * 0.012, 6, 16);
         double levelGapPx = 4;
@@ -183,9 +183,36 @@ public sealed class WarehouseCanvas : Control
             DrawLabel(context, shuttle.Id == ShuttleId.Shuttle1 ? "1" : "2", new Point(body.X + 5, body.Y + 1), 11, Brushes.White);
         }
 
-        DrawLabel(context, UiText.ZoneShuttle1, new Point(padL, bounds.Height - 16), 11, Brush(Color.Parse("#6FA0E8")));
-        DrawLabel(context, UiText.ZoneShared, new Point(padL + 110, bounds.Height - 16), 11, Brush(Color.Parse("#E0B15A")));
-        DrawLabel(context, UiText.ZoneShuttle2, new Point(padL + 230, bounds.Height - 16), 11, Brush(Color.Parse("#B79CFF")));
+        DrawZoneLegend(context, bounds, padL);
+    }
+
+    private void DrawZoneLegend(DrawingContext context, Rect bounds, double padL)
+    {
+        (string Text, Color Color)[] items =
+        [
+            (UiText.ZoneShuttle1, Color.Parse("#6FA0E8")),
+            (UiText.ZoneShared, Color.Parse("#E0B15A")),
+            (UiText.ZoneShuttle2, Color.Parse("#B79CFF"))
+        ];
+        double y = Math.Max(4, bounds.Height - 20);
+        double x = padL;
+        foreach (var item in items)
+        {
+            var formatted = new FormattedText(
+                item.Text,
+                CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                Typeface.Default,
+                11,
+                Brush(item.Color));
+            if (x > padL && x + formatted.Width > bounds.Width - 8)
+            {
+                break;
+            }
+
+            context.DrawText(formatted, new Point(x, y));
+            x += formatted.Width + 16;
+        }
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

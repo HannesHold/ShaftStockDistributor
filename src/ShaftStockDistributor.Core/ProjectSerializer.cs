@@ -36,6 +36,7 @@ public static class ProjectSerializer
             ?? throw new InvalidDataException("The project file is empty.");
         project.Shuttles ??= new List<ShuttleSettings>();
         project.Articles ??= new List<Article>();
+        project.CrateTypes ??= new List<CrateType>();
         project.Assignments ??= new List<ShaftAssignment>();
         project.Scenarios ??= new List<InflowScenario>();
         project.Layout ??= new LayoutSettings();
@@ -50,6 +51,11 @@ public static class ProjectSerializer
         foreach (var article in project.Articles)
         {
             article.Dimensions ??= new CrateDimensions();
+        }
+
+        foreach (var crateType in project.CrateTypes)
+        {
+            crateType.Dimensions ??= new CrateDimensions();
         }
 
         foreach (var shuttle in project.Shuttles)

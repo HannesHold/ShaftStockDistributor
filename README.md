@@ -8,7 +8,13 @@ All copy in the app, the sample, the logs, and these docs is English.
 
 ## What the demo shows
 
-Start demo loads the example warehouse, runs a short simulated-annealing pass (180 iterations), and plays the aisle:
+Run simulation plays the project that is already open: its layout, articles, assignment, and mode. It does not reload the example warehouse. If the stored assignment no longer matches the layout (a shaft is missing, duplicated, or points at an unknown article), that same project is optimized again and then played. Load example is a separate action. It asks before replacing a project that has unsaved changes. The first launch still opens the example warehouse.
+
+On the Articles page, Generate articles builds a catalog from the configured crate types. You set a count, the percentage of A, B, and C movers (they must add up to 100%), whether to replace or append, and an optional seed. Each article gets an English name, a crate type (dimensions and crates per pallet), and a demand share that keeps every A mover above every B mover and every B mover above every C mover. Generating clears the shaft assignment so you can run the optimizer. It does not load the example.
+
+Editing an article's inflow and pressing Apply writes that rate onto the project. If the change was typed into the grid, Apply commits the cell first instead of putting the old draft back. Playback restarts so arrivals use the new rate, and the status line names the article. Re-optimizing the shaft plan stays a separate step.
+
+The aisle itself:
 
 - Shafts fill in the article color. A pull drains the shaft.
 - Shuttles move with the acceleration profile, horizontally and between levels at the same time.
@@ -20,9 +26,11 @@ The other pages edit the layout (including per-shuttle, per-axis speed), the cra
 
 ## Screenshots
 
-Headless Skia captures of the main window. The live frame is the example demo after the shuttles have started to move. The study frame is a short sweep of the three example scenarios.
+Headless Skia captures of the main window. `live-demo.png` is the aisle at 1280×800 after the shuttles have started to move. `live-demo-wide.png` is the same view at 1920×1080. `article-generator.png` is the Articles page with the generator asking before a replace.
 
-![Live demo with the example aisle running](docs/screenshots/live-demo.png)
+![Live demo at 1280×800](docs/screenshots/live-demo.png)
+
+![Article generator](docs/screenshots/article-generator.png)
 
 ![Scenario study chart](docs/screenshots/scenario-study.png)
 

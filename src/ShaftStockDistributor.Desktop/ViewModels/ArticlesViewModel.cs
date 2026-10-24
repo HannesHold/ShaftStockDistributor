@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -52,6 +53,9 @@ public partial class ArticleDraft : ObservableValidator
     [ObservableProperty] private double _inflow;
     [ObservableProperty] private string _color = "#4C8DFF";
 
+    /// <summary>Inflow last loaded from the article. A grid edit can change the row without touching this draft.</summary>
+    public double BaselineInflow { get; private set; }
+
     public void Load(Article article)
     {
         Id = article.Id;
@@ -65,8 +69,11 @@ public partial class ArticleDraft : ObservableValidator
         Offset = article.Offset;
         ClassWeight = article.ClassWeight;
         Inflow = article.InflowCratesPerHour;
+        BaselineInflow = Inflow;
         Color = article.ColorHex;
     }
+
+    public void AcceptInflowBaseline() => BaselineInflow = Inflow;
 
     public void Validate() => ValidateAllProperties();
 
@@ -108,6 +115,13 @@ public partial class ArticlesViewModel : ObservableObject
 
     [ObservableProperty] private Article? _selected;
     [ObservableProperty] private string _status = "";
+    [ObservableProperty] private int _generateCount = 100;
+    [ObservableProperty] private double _percentA = 20;
+    [ObservableProperty] private double _percentB = 30;
+    [ObservableProperty] private double _percentC = 50;
+    [ObservableProperty] private bool _replaceExisting;
+    [ObservableProperty] private string _seedText = "";
+    [ObservableProperty] private bool _replaceConfirmationVisible;
 
     partial void OnSelectedChanged(Article? value)
     {
@@ -172,21 +186,153 @@ public partial class ArticlesViewModel : ObservableObject
             return;
         }
 
+        bool formEditedInflow = Math.Abs(Draft.Inflow - Draft.BaselineInflow) > 1e-6;
+        if (!formEditedInflow)
+        {
+            Draft.Inflow = Selected.InflowCratesPerHour;
+        }
+
+        string name = string.IsNullOrWhiteSpace(Draft.Name) ? Selected.Name : Draft.Name.Trim();
         Draft.Write(Selected);
-        Status = UiText.Saved;
+        bool inflowChanged = Math.Abs(Selected.InflowCratesPerHour - Draft.BaselineInflow) > 1e-6;
+        Draft.AcceptInflowBaseline();
+        Status = inflowChanged
+            ? string.Format(CultureInfo.InvariantCulture, UiText.InflowUpdated, name)
+            : string.Format(CultureInfo.InvariantCulture, UiText.ArticleUpdated, name);
         Publish();
     }
+
+    [RelayCommand]
+    private void RequestGenerate()
+    {
+        if (!TryCreateRequest(out var request))
+        {
+            ReplaceConfirmationVisible = false;
+            return;
+        }
+
+        if (ReplaceExisting && _project!.Articles.Count > 0)
+        {
+            ReplaceConfirmationVisible = true;
+            return;
+        }
+
+        ReplaceConfirmationVisible = false;
+        CommitGenerate(request);
+    }
+
+    [RelayCommand]
+    private void ConfirmGenerate()
+    {
+        ReplaceConfirmationVisible = false;
+        if (!TryCreateRequest(out var request))
+        {
+            return;
+        }
+
+        CommitGenerate(request with { ReplaceExisting = true });
+    }
+
+    [RelayCommand]
+    private void CancelGenerate() => ReplaceConfirmationVisible = false;
+
+    private bool TryCreateRequest(out ArticleGenerationRequest request)
+    {
+        request = new ArticleGenerationRequest();
+        if (_project is null)
+        {
+            return false;
+        }
+
+        int? seed = null;
+        if (!string.IsNullOrWhiteSpace(SeedText))
+        {
+            if (!int.TryParse(SeedText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+            {
+                Status = UiText.GeneratorSeed;
+                return false;
+            }
+
+            seed = parsed;
+        }
+
+        if (_project.CrateTypes.Count == 0)
+        {
+            _project.CrateTypes = CrateTypeCatalog.CreateStandard();
+        }
+
+        double total = _project.Scenarios
+            .FirstOrDefault(scenario => scenario.Name == _project.ActiveScenarioName)?.TotalCratesPerHour
+            ?? _project.Scenarios.FirstOrDefault()?.TotalCratesPerHour
+            ?? 1800;
+        request = new ArticleGenerationRequest
+        {
+            Count = GenerateCount,
+            PercentA = PercentA,
+            PercentB = PercentB,
+            PercentC = PercentC,
+            ReplaceExisting = ReplaceExisting,
+            Seed = seed,
+            TotalCratesPerHour = total,
+            CrateTypes = _project.CrateTypes
+        };
+        var error = ArticleGenerator.Validate(request);
+        if (error != ArticleGenerationError.None)
+        {
+            Status = GeneratorStatus(error);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void CommitGenerate(ArticleGenerationRequest request)
+    {
+        if (_project is null)
+        {
+            return;
+        }
+
+        var result = ArticleGenerator.Apply(_project, request);
+        if (!result.Succeeded)
+        {
+            Status = GeneratorStatus(result.Error);
+            return;
+        }
+
+        Load(_project);
+        Status = string.Format(
+            CultureInfo.InvariantCulture,
+            UiText.GeneratedArticles,
+            result.Articles.Count,
+            result.CountA,
+            result.CountB,
+            result.CountC);
+        Publish();
+    }
+
+    private static string GeneratorStatus(ArticleGenerationError error) => error switch
+    {
+        ArticleGenerationError.Count => UiText.GeneratorCount,
+        ArticleGenerationError.NegativePercent => UiText.GeneratorPercent,
+        ArticleGenerationError.PercentSum => UiText.GeneratorPercentSum,
+        ArticleGenerationError.NoCrateTypes => UiText.GeneratorNoCrateTypes,
+        _ => UiText.StatusReady
+    };
 
     private void Load(DistributorProject project)
     {
         _project = project;
+        string? selectedId = Selected?.Id;
         Rows.Clear();
         foreach (var article in project.Articles)
         {
             Rows.Add(article);
         }
 
-        Selected = Rows.FirstOrDefault();
+        Selected = selectedId is null
+            ? Rows.FirstOrDefault()
+            : Rows.FirstOrDefault(row => row.Id == selectedId) ?? Rows.FirstOrDefault();
     }
 
     private void Publish()

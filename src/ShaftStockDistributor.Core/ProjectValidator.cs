@@ -95,6 +95,7 @@ public static class ProjectValidator
         }
 
         var addresses = new HashSet<ShaftAddress>();
+        var covered = new HashSet<ShaftAddress>();
         foreach (var slot in project.Assignments)
         {
             var address = slot.Address;
@@ -103,10 +104,28 @@ public static class ProjectValidator
                 issues.Add(Make(ValidationSeverity.Error, ValidationCodes.DuplicateAddress, address.ToString()));
             }
 
+            bool inside = address.Segment >= 1 && address.Segment <= layout.SegmentCount
+                && address.Level >= 1 && address.Level <= layout.LevelsPerSegment
+                && address.Shaft >= 1 && address.Shaft <= layout.ShaftsPerLevel;
+            if (!inside)
+            {
+                issues.Add(Make(ValidationSeverity.Error, ValidationCodes.AddressOutsideLayout, address.ToString()));
+            }
+            else
+            {
+                covered.Add(address);
+            }
+
             if (!string.IsNullOrEmpty(slot.ArticleId) && project.FindArticle(slot.ArticleId) is null)
             {
                 issues.Add(Make(ValidationSeverity.Error, ValidationCodes.UnknownArticle, address.ToString(), slot.ArticleId));
             }
+        }
+
+        int shaftCount = layout.SegmentCount * layout.LevelsPerSegment * layout.ShaftsPerLevel;
+        if (shaftCount > 0 && covered.Count != shaftCount)
+        {
+            issues.Add(Make(ValidationSeverity.Warning, ValidationCodes.AssignmentIncomplete));
         }
 
         foreach (var scenario in project.Scenarios)

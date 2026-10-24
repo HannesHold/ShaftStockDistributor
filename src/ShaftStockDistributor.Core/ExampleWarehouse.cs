@@ -70,6 +70,7 @@ public static class ExampleWarehouse
         });
 
         MarkCatalogOnly(project, "EX-C-OVERSIZE");
+        project.CrateTypes = CrateTypeCatalog.CreateStandard();
         ProjectGrid.EnsureDefaultShuttles(project);
         ProjectGrid.EnsureFullGrid(project);
         InflowAllocator.Apply(project, project.Scenarios[0]);
@@ -101,6 +102,7 @@ public static class ExampleWarehouse
             ShareB = 0.20,
             ShareC = 0.10
         });
+        project.CrateTypes = CrateTypeCatalog.CreateStandard();
         ProjectGrid.EnsureDefaultShuttles(project);
         ProjectGrid.EnsureFullGrid(project);
         return project;
