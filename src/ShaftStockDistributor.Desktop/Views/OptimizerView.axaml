@@ -1,0 +1,61 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ShaftStockDistributor.Desktop.ViewModels"
+             xmlns:local="using:ShaftStockDistributor.Desktop"
+             x:Class="ShaftStockDistributor.Desktop.Views.OptimizerView"
+             x:DataType="vm:OptimizerViewModel">
+  <StackPanel Spacing="14" MaxWidth="920">
+    <TextBlock Text="{x:Static local:UiText.OptimizerTitle}" Classes="h1" />
+    <TextBlock Text="{Binding Status}" Classes="muted" />
+    <Border Classes="card">
+      <StackPanel Spacing="10">
+        <WrapPanel>
+          <StackPanel Width="160" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.Iterations}" Classes="field" />
+            <TextBox Text="{Binding Iterations, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="180" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.ExpectedWait}" Classes="field" />
+            <TextBox Text="{Binding ExpectedWait, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+        </WrapPanel>
+        <TextBlock Text="{x:Static local:UiText.Weights}" Classes="section" />
+        <WrapPanel>
+          <StackPanel Width="140" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.TravelWeight}" Classes="field" />
+            <TextBox Text="{Binding TravelWeight, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="140" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.ImbalanceWeight}" Classes="field" />
+            <TextBox Text="{Binding ImbalanceWeight, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="140" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.MiddleWeight}" Classes="field" />
+            <TextBox Text="{Binding MiddleWeight, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="140" Margin="0,0,12,8">
+            <TextBlock Text="{x:Static local:UiText.PenaltyWeight}" Classes="field" />
+            <TextBox Text="{Binding PenaltyWeight, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+        </WrapPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="accent" Content="{x:Static local:UiText.RunOptimizer}" Command="{Binding RunCommand}" IsEnabled="{Binding !IsBusy}" />
+          <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" IsVisible="{Binding IsBusy}" />
+        </StackPanel>
+        <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsBusy}" Height="6" />
+      </StackPanel>
+    </Border>
+    <Border Classes="card">
+      <StackPanel Spacing="8">
+        <TextBlock Text="{x:Static local:UiText.CostBefore}" Classes="field" />
+        <TextBlock Text="{Binding BeforeText}" TextWrapping="Wrap" />
+        <TextBlock Text="{x:Static local:UiText.CostNaive}" Classes="field" />
+        <TextBlock Text="{Binding NaiveText}" TextWrapping="Wrap" />
+        <TextBlock Text="{x:Static local:UiText.CostAfter}" Classes="field" />
+        <TextBlock Text="{Binding AfterText}" TextWrapping="Wrap" FontSize="16" FontWeight="SemiBold" />
+        <TextBlock Text="{x:Static local:UiText.ChangedShafts}" Classes="field" />
+        <TextBlock Text="{Binding ChangedText}" />
+      </StackPanel>
+    </Border>
+  </StackPanel>
+</UserControl>

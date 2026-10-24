@@ -1,242 +1,179 @@
-using System.Globalization;
-using System.Text.Json;
 using ShaftStockDistributor.Core;
 using ShaftStockDistributor.Optimizer;
 using ShaftStockDistributor.Simulation;
 
-var exit = Run(args);
-return exit;
+namespace ShaftStockDistributor.Cli;
 
-static int Run(string[] args)
+public static class Program
 {
-    if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
+    public static int Main(string[] args)
     {
-        Console.WriteLine(Help());
-        return args.Length == 0 ? 1 : 0;
-    }
-
-    try
-    {
-        var options = Parse(args);
-        return args[0] switch
+        if (args.Length == 0 || args[0] is "-h" or "--help" or "help")
         {
-            "sample" => Sample(options),
-            "optimize" => Optimize(options),
-            "simulate" => Simulate(options),
-            "compare" => Compare(options),
-            "validate" => Validate(options),
-            _ => Unknown(args[0])
-        };
-    }
-    catch (Exception ex) when (ex is InvalidOperationException or FormatException or ArgumentException or IOException or JsonException)
-    {
-        Console.Error.WriteLine(ex.Message);
-        return 3;
-    }
-}
+            Help();
+            return args.Length == 0 ? 1 : 0;
+        }
 
-static int Sample(Dictionary<string, string> options)
-{
-    var directory = Required(options, "out");
-    Directory.CreateDirectory(directory);
-    WarehouseFiles.Save(Path.Combine(directory, "layout.json"), WarehouseMapper.ToLayout(SampleWarehouse.Layout()));
-    WarehouseFiles.Save(Path.Combine(directory, "articles.json"), WarehouseMapper.ToArticles(SampleWarehouse.Articles()));
-    WarehouseFiles.Save(Path.Combine(directory, "parameters.json"), WarehouseMapper.ToParameters(SampleWarehouse.Parameters()));
-    Console.WriteLine($"Wrote example layout, articles, and parameters to {directory}");
-    Console.WriteLine("These files are example data, not measurements from a warehouse.");
-    return 0;
-}
-
-static int Optimize(Dictionary<string, string> options)
-{
-    var layout = WarehouseFiles.LoadLayout(Required(options, "layout"));
-    var articles = WarehouseFiles.LoadArticles(Required(options, "articles"));
-    var parameters = LoadParameters(options);
-    Assignment? current = options.TryGetValue("current", out var currentPath)
-        ? WarehouseFiles.LoadAssignment(currentPath)
-        : null;
-    var start = options.ContainsKey("keep-current")
-        ? OptimizationStart.KeepCurrent
-        : OptimizationStart.Constructive;
-    var result = AnnealingOptimizer.Optimize(layout, articles, parameters, current, start);
-    var outPath = Required(options, "out");
-    WarehouseFiles.Save(outPath, result.Assignment);
-    Console.WriteLine($"Wrote {outPath}");
-    Console.WriteLine(Invariant(
-        $"Cost {result.ConstructiveCost.Total:0.##} -> {result.FinalCost.Total:0.##} (travel {result.FinalCost.Travel:0.#}, imbalance {result.FinalCost.Imbalance:0.#}, middle {result.FinalCost.MiddleTraffic:0.#}, penalty {result.FinalCost.Violation:0.#})"));
-    Console.WriteLine(Invariant(
-        $"Shuttle load {result.FinalCost.LoadShuttle1:0.#} / {result.FinalCost.LoadShuttle2:0.#}, accepted moves {result.AcceptedMoves}, iterations {result.Iterations}"));
-    PrintDemand(layout, articles, parameters, result.Assignment);
-
-    if (options.TryGetValue("naive-out", out var naivePath))
-    {
-        var naive = NaiveAssigner.AssignInOrder(layout, articles, parameters, current);
-        naive.ExampleData = articles.ExampleData || layout.ExampleData;
-        naive.Notes = "Naive baseline produced for comparison: articles in id order, packed from the left. Not a recommended plan.";
-        WarehouseFiles.Save(naivePath, naive);
-        var naiveCost = AssignmentCost.Evaluate(layout, articles, naive, parameters);
-        Console.WriteLine(Invariant($"Wrote naive baseline {naivePath} (cost {naiveCost.Total:0.##})"));
+        try
+        {
+            return args[0] switch
+            {
+                "sample" => Sample(args),
+                "optimize" => Optimize(args),
+                "simulate" => Simulate(args),
+                "study" => Study(args),
+                _ => Unknown(args[0])
+            };
+        }
+        catch (Exception exception)
+        {
+            Console.Error.WriteLine(exception.Message);
+            return 1;
+        }
     }
 
-    return ReportValidation(layout, articles, result.Assignment);
-}
-
-static int Simulate(Dictionary<string, string> options)
-{
-    var layout = WarehouseFiles.LoadLayout(Required(options, "layout"));
-    var articles = WarehouseFiles.LoadArticles(Required(options, "articles"));
-    var assignment = WarehouseFiles.LoadAssignment(Required(options, "assignment"));
-    var code = ReportValidation(layout, articles, assignment);
-    if (code != 0)
+    private static int Sample(string[] args)
     {
-        return code;
-    }
-
-    var result = WarehouseSimulator.Run(layout, articles, assignment, ReadOptions(options));
-    Console.Write(KpiReport.Format(result, "Simulation"));
-    return result.CollisionViolations == 0 ? 0 : 4;
-}
-
-static int Compare(Dictionary<string, string> options)
-{
-    var layout = WarehouseFiles.LoadLayout(Required(options, "layout"));
-    var articles = WarehouseFiles.LoadArticles(Required(options, "articles"));
-    var first = WarehouseFiles.LoadAssignment(Required(options, "first"));
-    var second = WarehouseFiles.LoadAssignment(Required(options, "second"));
-    var firstCode = ReportValidation(layout, articles, first);
-    var secondCode = ReportValidation(layout, articles, second);
-    if (firstCode != 0 || secondCode != 0)
-    {
-        return 2;
-    }
-
-    var sim = ReadOptions(options);
-    var left = WarehouseSimulator.Run(layout, articles, first, sim);
-    var right = WarehouseSimulator.Run(layout, articles, second, sim);
-    var leftName = options.GetValueOrDefault("first-name", "first");
-    var rightName = options.GetValueOrDefault("second-name", "second");
-    Console.Write(KpiReport.Compare(left, right, leftName, rightName));
-    return left.CollisionViolations == 0 && right.CollisionViolations == 0 ? 0 : 4;
-}
-
-static int Validate(Dictionary<string, string> options)
-{
-    var layout = WarehouseFiles.LoadLayout(Required(options, "layout"));
-    var articles = WarehouseFiles.LoadArticles(Required(options, "articles"));
-    var assignment = options.TryGetValue("assignment", out var path)
-        ? WarehouseFiles.LoadAssignment(path)
-        : new Assignment();
-    return ReportValidation(layout, articles, assignment);
-}
-
-static int ReportValidation(Layout layout, ArticleSet articles, Assignment assignment)
-{
-    var messages = WarehouseValidator.Validate(layout, articles, assignment);
-    if (messages.Count == 0)
-    {
-        Console.WriteLine("Validation: ok");
+        string path = Value(args, "--out") ?? "samples/example-warehouse.json";
+        var project = ExampleWarehouse.Create();
+        var optimized = AnnealingOptimizer.Run(project, iterations: 400);
+        ProjectGrid.ReplaceAssignments(project, optimized.Assignments);
+        ProjectSerializer.Save(path, project);
+        Console.WriteLine($"Wrote example project to {path}");
+        Console.WriteLine($"Naive cost {optimized.Naive.Total:0.###}; optimized cost {optimized.Optimized.Total:0.###}");
         return 0;
     }
 
-    foreach (var message in messages)
+    private static int Optimize(string[] args)
     {
-        Console.WriteLine($"{message.Severity}: {message.Text}");
-    }
-
-    return WarehouseValidator.HasErrors(messages) ? 2 : 0;
-}
-
-static void PrintDemand(Layout layout, ArticleSet articles, PlanningParameters parameters, Assignment assignment)
-{
-    var inflows = InflowResolver.Resolve(articles);
-    var demand = ShaftDemandCalculator.ForArticles(layout, articles, inflows, parameters);
-    Console.WriteLine("Article demand (calculated shafts / assigned):");
-    foreach (var article in articles.Items)
-    {
-        Console.WriteLine(Invariant(
-            $"  {article.Id,-16} {article.AbcClass}  inflow {inflows.GetValueOrDefault(article.Id):0.##}/h  shafts {demand.GetValueOrDefault(article.Id)} / {assignment.CountFor(article.Id)}"));
-    }
-}
-
-static SimulationOptions ReadOptions(Dictionary<string, string> options)
-{
-    return new SimulationOptions
-    {
-        Hours = options.TryGetValue("hours", out var hours) ? double.Parse(hours, CultureInfo.InvariantCulture) : 8,
-        Seed = options.TryGetValue("seed", out var seed) ? int.Parse(seed, CultureInfo.InvariantCulture) : 1,
-        RecordTrace = false
-    };
-}
-
-static PlanningParameters LoadParameters(Dictionary<string, string> options) =>
-    options.TryGetValue("parameters", out var path)
-        ? WarehouseFiles.LoadParameters(path)
-        : PlanningParameters.CreateDefault();
-
-static Dictionary<string, string> Parse(string[] args)
-{
-    var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    for (var i = 1; i < args.Length; i++)
-    {
-        var token = args[i];
-        if (!token.StartsWith("--", StringComparison.Ordinal) || token.Length < 3)
+        var project = Load(args);
+        var result = AnnealingOptimizer.Run(project);
+        ProjectGrid.ReplaceAssignments(project, result.Assignments);
+        string? output = Value(args, "--out");
+        if (output is not null)
         {
-            throw new ArgumentException($"Unexpected argument '{token}'. Options look like --layout path.");
+            ProjectSerializer.Save(output, project);
         }
 
-        var key = token[2..];
-        if (i + 1 < args.Length && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
-        {
-            options[key] = args[++i];
-        }
-        else
-        {
-            options[key] = "true";
-        }
+        Console.WriteLine($"Before {result.Before}");
+        Console.WriteLine($"Naive  {result.Naive}");
+        Console.WriteLine($"Optimized {result.Optimized}");
+        Console.WriteLine($"Changed shafts: {result.ChangedShafts}");
+        return 0;
     }
 
-    return options;
+    private static int Simulate(string[] args)
+    {
+        var project = Load(args);
+        double hours = Parse(Value(args, "--hours"), 1);
+        double warmup = Parse(Value(args, "--warmup"), 0.1);
+        int seed = (int)Parse(Value(args, "--seed"), 1);
+        var mode = Enum.TryParse<AssignmentMode>(Value(args, "--mode"), true, out var parsed) ? parsed : project.AssignmentMode;
+        var result = SimulationSession.Run(project, new SimulationOptions
+        {
+            DurationSeconds = hours * 3600,
+            WarmupSeconds = warmup * 3600,
+            Seed = seed,
+            Mode = mode
+        });
+        PrintResult(result);
+        return 0;
+    }
+
+    private static int Study(string[] args)
+    {
+        var project = Load(args);
+        var request = new StudyRequest
+        {
+            MinCratesPerHour = Parse(Value(args, "--min"), project.Study.MinCratesPerHour),
+            MaxCratesPerHour = Parse(Value(args, "--max"), project.Study.MaxCratesPerHour),
+            StepCratesPerHour = Parse(Value(args, "--step"), project.Study.StepCratesPerHour),
+            Replications = (int)Parse(Value(args, "--reps"), project.Study.Replications),
+            BaseSeed = (int)Parse(Value(args, "--seed"), project.Study.BaseSeed),
+            DurationHours = Parse(Value(args, "--hours"), 0.5),
+            WarmupHours = Parse(Value(args, "--warmup"), 0.05),
+            ReoptimizePerScenario = !args.Contains("--no-optimize"),
+            CompareAssignmentModes = args.Contains("--compare-modes"),
+            Mode = project.AssignmentMode,
+            OptimizerIterations = (int)Parse(Value(args, "--iterations"), 120),
+            Thresholds = new SaturationSettings
+            {
+                AchievedRatio = project.Study.AchievedRatioThreshold,
+                TreatLostCratesAsSaturation = project.Study.TreatLostCratesAsSaturation,
+                UtilizationCeiling = project.Study.UtilizationCeiling
+            }
+        };
+        var progress = new Progress<StudyProgress>(update =>
+            Console.WriteLine($"[{update.Completed}/{update.Total}] {update.Message}"));
+        var result = ScenarioStudyRunner.Run(project, request, progress);
+        foreach (var point in result.Means)
+        {
+            Console.WriteLine(
+                $"{point.Scenario} | {point.Mode} | {point.LoadCratesPerHour:0} crates/h | offered {point.OfferedPalletsPerHour:0.0} | achieved {point.AchievedPalletsPerHour:0.0} | util {point.Utilization1:P0}/{point.Utilization2:P0} | lost {point.LostCrates}");
+        }
+
+        foreach (var saturation in result.Saturations)
+        {
+            string at = saturation.Found ? $"{saturation.SaturatedAtCratesPerHour:0} crates/h" : "not reached";
+            Console.WriteLine($"Saturation {saturation.Scenario} / {saturation.Mode}: {at}. Sustainable {saturation.MaxSustainablePalletsPerHour:0.0} pallets/h. {saturation.Reason}");
+        }
+
+        string? csv = Value(args, "--csv");
+        if (csv is not null)
+        {
+            File.WriteAllText(csv, ScenarioStudyRunner.ToCsv(result));
+            Console.WriteLine($"Wrote {csv}");
+        }
+
+        return 0;
+    }
+
+    private static void PrintResult(SimulationResult result)
+    {
+        Console.WriteLine($"Pallets {result.Pallets:0.00} ({result.PalletsPerHour:0.00} per hour), offered {result.OfferedPalletsPerHour:0.00} per hour");
+        Console.WriteLine($"Pulls shuttle 1 {result.PullsShuttle1}, shuttle 2 {result.PullsShuttle2}");
+        Console.WriteLine($"Utilization shuttle 1 {result.Utilization1:P1}, shuttle 2 {result.Utilization2:P1}");
+        Console.WriteLine($"Pull wait average {result.AveragePullWaitSeconds:0.0} s, max {result.MaxPullWaitSeconds:0.0} s");
+        Console.WriteLine($"Blocked {result.BlockedSeconds:0.0} s, lost crates {result.LostCrates}, overflowing shafts {result.OverflowingShafts}");
+        Console.WriteLine($"Controller jobs {result.ControllerPullJobs}, hardware jobs {result.HardwarePullJobs}");
+    }
+
+    private static DistributorProject Load(string[] args)
+    {
+        string? path = Value(args, "--project") ?? Value(args, "-p");
+        if (path is null)
+        {
+            throw new InvalidOperationException("Pass --project <file>.");
+        }
+
+        return ProjectSerializer.Load(path);
+    }
+
+    private static string? Value(string[] args, string name)
+    {
+        int index = Array.IndexOf(args, name);
+        return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
+    }
+
+    private static double Parse(string? text, double fallback) =>
+        double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value)
+            ? value
+            : fallback;
+
+    private static int Unknown(string command)
+    {
+        Console.Error.WriteLine($"Unknown command '{command}'.");
+        Help();
+        return 1;
+    }
+
+    private static void Help()
+    {
+        Console.WriteLine("""
+            shaftstock sample [--out file]
+            shaftstock optimize --project file [--out file]
+            shaftstock simulate --project file [--hours 1] [--warmup 0.1] [--seed 1] [--mode Automatic|Manual]
+            shaftstock study --project file [--min 600] [--max 4200] [--step 600] [--reps 2] [--hours 0.5] [--iterations 120] [--compare-modes] [--no-optimize] [--csv file]
+            """);
+    }
 }
-
-static string Invariant(FormattableString message) => FormattableString.Invariant(message);
-
-static string Required(Dictionary<string, string> options, string key) =>
-    options.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
-        ? value
-        : throw new ArgumentException($"Missing --{key}.");
-
-static int Unknown(string command)
-{
-    Console.Error.WriteLine($"Unknown command '{command}'.");
-    Console.Error.WriteLine(Help());
-    return 1;
-}
-
-static string Help() =>
-    """
-    ShaftStockDistributor
-
-    sample    --out <dir>
-              Write example layout.json, articles.json, and parameters.json.
-              The files are marked exampleData and are not warehouse measurements.
-
-    optimize  --layout <file> --articles <file> --out <assignment.json>
-              [--parameters <file>] [--current <assignment.json>] [--keep-current]
-              [--naive-out <assignment.json>]
-              Build an assignment and improve it by simulated annealing.
-              Pinned shafts in --current stay put. --keep-current also starts from
-              the other shafts instead of rebuilding them.
-              --naive-out writes an articles-in-order baseline for compare.
-
-    simulate  --layout <file> --articles <file> --assignment <file>
-              [--parameters <file>] [--hours 8] [--seed 1]
-
-    compare   --layout <file> --articles <file> --first <assignment.json> --second <assignment.json>
-              [--parameters <file>] [--hours 8] [--seed 1]
-              [--first-name optimized] [--second-name naive]
-
-    validate  --layout <file> --articles <file> [--assignment <file>]
-
-    Indexes in the JSON files are one-based. Exit code 0 is success, 1 is usage,
-    2 is a validation error, 3 is a bad file, 4 means the simulation saw a shuttle collision.
-    """;

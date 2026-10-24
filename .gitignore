@@ -2,9 +2,9 @@ bin/
 obj/
 .vs/
 .idea/
+artifacts/
 *.user
 *.suo
 TestResults/
 .dotnet/
-artifacts/
 *.log

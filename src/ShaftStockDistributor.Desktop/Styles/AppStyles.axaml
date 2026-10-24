@@ -1,0 +1,78 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="Window">
+    <Setter Property="FontFamily" Value="Inter, sans-serif" />
+    <Setter Property="Background" Value="#0E141B" />
+    <Setter Property="Foreground" Value="#E7EEF6" />
+  </Style>
+  <Style Selector="TextBlock.h1">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="#9AABBC" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+  <Style Selector="TextBlock.field">
+    <Setter Property="Foreground" Value="#C5D2E0" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="TextBlock.kpi">
+    <Setter Property="FontSize" Value="34" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="#F4F7FB" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,4,0,8" />
+  </Style>
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="#16202B" />
+    <Setter Property="BorderBrush" Value="#243140" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="12" />
+  </Style>
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="#3A2A12" />
+    <Setter Property="BorderBrush" Value="#F0A202" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="10,4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.badge TextBlock">
+    <Setter Property="Foreground" Value="#F0A202" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Border.chip">
+    <Setter Property="Background" Value="#3A2430" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="8,4" />
+  </Style>
+  <Style Selector="Button">
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12,7" />
+  </Style>
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="#2F6FED" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Button.nav">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="12,9" />
+  </Style>
+  <Style Selector="Button.nav.selected">
+    <Setter Property="Background" Value="#1B3148" />
+    <Setter Property="Foreground" Value="#8EBEFF" />
+  </Style>
+  <Style Selector="TextBox">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+</Styles>

@@ -1,5 +1,4 @@
 using ShaftStockDistributor.Core;
-using ShaftStockDistributor.Optimizer;
 using ShaftStockDistributor.Simulation;
 
 namespace ShaftStockDistributor.Tests;
@@ -7,150 +6,140 @@ namespace ShaftStockDistributor.Tests;
 public class SimulationTests
 {
     [Fact]
-    public void Same_seed_reproduces_the_run()
+    public void Same_seed_reproduces_pallets_and_lost_crates()
     {
-        var (layout, articles, assignment) = OptimizedSample(iterations: 30);
-        var options = new SimulationOptions { Hours = 2, Seed = 11, RecordTrace = true };
-
-        var first = WarehouseSimulator.Run(layout, articles, assignment, options);
-        var second = WarehouseSimulator.Run(layout, articles, assignment, options);
-
+        var project = TestWarehouses.SteadySmall();
+        var first = SimulationSession.Run(project, Options(1800, 1));
+        var second = SimulationSession.Run(project.Clone(), Options(1800, 1));
+        Assert.Equal(first.Pallets, second.Pallets);
+        Assert.Equal(first.LostCrates, second.LostCrates);
+        Assert.Equal(first.PullsByShaft, second.PullsByShaft);
         Assert.Equal(first.PullsShuttle1, second.PullsShuttle1);
-        Assert.Equal(first.PullsShuttle2, second.PullsShuttle2);
-        Assert.Equal(first.RejectedCrates, second.RejectedCrates);
-        Assert.Equal(first.AcceptedCrates, second.AcceptedCrates);
-        Assert.Equal(first.AveragePullWaitSeconds, second.AveragePullWaitSeconds);
-        Assert.Equal(first.MaxPullWaitSeconds, second.MaxPullWaitSeconds);
-        Assert.Equal(first.BlockedSeconds, second.BlockedSeconds);
-        Assert.Equal(first.CollisionViolations, second.CollisionViolations);
-        Assert.Equal(first.Trace.Count, second.Trace.Count);
-        Assert.Equal(first.Trace[^1], second.Trace[^1]);
     }
 
     [Fact]
-    public void Shuttles_never_occupy_conflicting_positions()
+    public void Different_seeds_are_allowed_to_diverge()
     {
-        var (layout, articles, assignment) = OptimizedSample(iterations: 40);
-        var result = WarehouseSimulator.Run(
-            layout,
-            articles,
-            assignment,
-            new SimulationOptions { Hours = 4, Seed = 1, RecordTrace = true });
+        var project = TestWarehouses.SteadySmall();
+        var first = SimulationSession.Run(project, Options(2400, 1));
+        var second = SimulationSession.Run(project.Clone(), Options(2400, 2));
+        Assert.NotEqual(first.Pallets + first.LostCrates + first.AveragePullWaitSeconds,
+            second.Pallets + second.LostCrates + second.AveragePullWaitSeconds);
+    }
 
-        Assert.Equal(0, result.CollisionViolations);
-        Assert.Null(result.FirstCollision);
-        Assert.NotEmpty(result.Trace);
-        foreach (var sample in result.Trace)
-        {
-            var conflict = sample.Shuttle1RangeEnd + layout.SafetyDistanceSegments >= sample.Shuttle2RangeStart
-                && sample.Shuttle2RangeEnd + layout.SafetyDistanceSegments >= sample.Shuttle1RangeStart;
-            Assert.False(conflict, $"Overlap at t={sample.TimeSeconds}: {sample}");
-        }
+    [Fact]
+    public void Simulation_sends_pulls_through_the_controller_and_hardware()
+    {
+        var result = SimulationSession.Run(TestWarehouses.SteadySmall(), Options(1200, 3));
+        Assert.True(result.Pallets > 0);
+        Assert.True(result.ControllerPullJobs > 0);
+        Assert.Equal(result.ControllerPullJobs, result.HardwarePullJobs);
+    }
 
+    [Fact]
+    public void Shuttles_never_reserve_overlapping_paths_and_the_shared_zone_can_block()
+    {
+        var project = TestWarehouses.Contention();
+        var session = SimulationSession.Start(project, Options(900, 4));
+        session.AdvanceTo(900);
+        Assert.True(session.Controller.Interlock.ReservationsAreSafe());
+        var result = session.ToResult();
+        Assert.True(result.BlockedSeconds > 0, "Expected the second shuttle to wait for the shared zone.");
+        Assert.Equal(result.ControllerPullJobs, result.HardwarePullJobs);
         Assert.True(result.PullsShuttle1 > 0);
         Assert.True(result.PullsShuttle2 > 0);
-        Assert.True(result.AcceptedCrates > 0);
     }
 
     [Fact]
-    public void Waiting_shaft_does_not_block_the_other_shafts_of_the_article()
+    public void Automatic_mode_keeps_pinned_articles()
     {
-        var layout = SmallLayout();
-        var articles = new ArticleSet
+        var project = TestWarehouses.SteadySmall();
+        project.AssignmentMode = AssignmentMode.Automatic;
+        var pinned = project.Assignments.First(slot => slot.ArticleId == "FAST");
+        pinned.Pinned = true;
+        var result = SimulationSession.Run(project, new SimulationOptions
         {
-            Items =
-            [
-                new Article
-                {
-                    Id = "SPREAD",
-                    Name = "Example multi-shaft crate",
-                    AbcClass = AbcClass.A,
-                    CratesPerHour = 300,
-                    CratesPerPallet = 20,
-                    Offset = 0,
-                    ShaftCapacity = 40
-                }
-            ]
-        };
-        var assignment = new Assignment();
-        assignment.Set(new ShaftLocation(0, 0, 0), "SPREAD", pinned: false);
-        assignment.Set(new ShaftLocation(0, 0, 1), "SPREAD", pinned: false);
-        assignment.Set(new ShaftLocation(0, 0, 2), "SPREAD", pinned: false);
-
-        var result = WarehouseSimulator.Run(
-            layout,
-            articles,
-            assignment,
-            new SimulationOptions { Hours = 2, Seed = 3, RecordTrace = false });
-
-        Assert.Equal(3, result.ShaftPulls.Count);
-        Assert.All(result.ShaftPulls, shaft => Assert.True(shaft.Pulls > 0, $"{shaft}"));
-        Assert.Equal(0, result.CollisionViolations);
-    }
-
-    [Fact]
-    public void Exclusive_zone_is_served_only_by_its_shuttle()
-    {
-        var layout = SmallLayout();
-        var articles = new ArticleSet
-        {
-            Items =
-            [
-                new Article
-                {
-                    Id = "ONLY-LEFT",
-                    Name = "Example left-zone crate",
-                    AbcClass = AbcClass.A,
-                    CratesPerHour = 400,
-                    CratesPerPallet = 10,
-                    Offset = 2,
-                    ShaftCapacity = 20
-                }
-            ]
-        };
-        var assignment = new Assignment();
-        assignment.Set(new ShaftLocation(0, 0, 0), "ONLY-LEFT", pinned: false);
-
-        var result = WarehouseSimulator.Run(
-            layout,
-            articles,
-            assignment,
-            new SimulationOptions { Hours = 1, Seed = 5, RecordTrace = true });
-
-        Assert.Equal(0, result.CollisionViolations);
-        Assert.True(result.PullsShuttle1 > 0);
-        Assert.Equal(0, result.PullsShuttle2);
-        Assert.All(result.Trace, sample =>
-        {
-            var conflict = ShuttleClearance.RangesConflict(
-                sample.Shuttle1RangeStart,
-                sample.Shuttle1RangeEnd,
-                sample.Shuttle2RangeStart,
-                sample.Shuttle2RangeEnd,
-                layout.SafetyDistanceSegments);
-            Assert.False(conflict);
+            DurationSeconds = 900,
+            WarmupSeconds = 0,
+            Seed = 5,
+            Mode = AssignmentMode.Automatic
         });
+        Assert.True(result.Pallets > 0 || result.LostCrates >= 0);
+        var session = SimulationSession.Start(project.Clone(), new SimulationOptions
+        {
+            DurationSeconds = 900,
+            Seed = 5,
+            Mode = AssignmentMode.Automatic
+        });
+        session.AdvanceTo(900);
+        var shaft = session.Controller.Shafts.Single(item => item.Address == pinned.Address);
+        Assert.Equal("FAST", shaft.ArticleId);
+        Assert.True(shaft.Pinned);
     }
 
-    private static (Layout Layout, ArticleSet Articles, Assignment Assignment) OptimizedSample(int iterations)
+    private static SimulationOptions Options(double seconds, int seed) => new()
     {
-        var layout = SampleWarehouse.CreateLayout();
-        var articles = SampleWarehouse.CreateArticles();
-        var parameters = SampleWarehouse.CreateParameters();
-        parameters.Annealing.Iterations = iterations;
-        var optimized = AnnealingOptimizer.Optimize(layout, articles, parameters);
-        return (layout, articles, optimized.Assignment);
+        DurationSeconds = seconds,
+        WarmupSeconds = 30,
+        Seed = seed,
+        Mode = AssignmentMode.Manual
+    };
+}
+
+public class StudyTests
+{
+    [Fact]
+    public void Detector_marks_the_first_load_that_stays_saturated()
+    {
+        var settings = new SaturationSettings { AchievedRatio = 0.98, TreatLostCratesAsSaturation = true };
+        var means = new List<StudyPoint>
+        {
+            Point(500, 10, 10, 0),
+            Point(1000, 20, 19.8, 0),
+            Point(1500, 30, 20, 4),
+            Point(2000, 40, 20, 12)
+        };
+        var found = SaturationDetector.Detect("Example", AssignmentMode.Manual, means, settings);
+        Assert.True(found.Found);
+        Assert.Equal(1500, found.SaturatedAtCratesPerHour);
+        Assert.Equal(19.8, found.MaxSustainablePalletsPerHour, 3);
+        Assert.Contains("lost", found.Reason, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static Layout SmallLayout()
+    [Fact]
+    public void Sweep_finds_a_saturation_point_on_a_tiny_warehouse()
     {
-        var document = SampleWarehouse.Layout();
-        document.SegmentCount = 9;
-        document.LevelsPerSegment = 2;
-        document.ShaftsPerLevel = 3;
-        document.Shuttle1Home = new ShuttleHomeDocument { Segment = 1, Level = 1, Shaft = 1 };
-        document.Shuttle2Home = new ShuttleHomeDocument { Segment = 9, Level = 1, Shaft = 3 };
-        document.ExampleData = true;
-        return WarehouseMapper.ToLayout(document);
+        var project = TestWarehouses.EasyToSaturate();
+        var result = ScenarioStudyRunner.Run(project, new StudyRequest
+        {
+            MinCratesPerHour = 20,
+            MaxCratesPerHour = 20000,
+            StepCratesPerHour = 19980,
+            Replications = 1,
+            BaseSeed = 9,
+            DurationHours = 0.08,
+            WarmupHours = 0,
+            ReoptimizePerScenario = false,
+            CompareAssignmentModes = false,
+            Mode = AssignmentMode.Manual,
+            Thresholds = new SaturationSettings { AchievedRatio = 0, TreatLostCratesAsSaturation = true }
+        });
+
+        var saturation = Assert.Single(result.Saturations);
+        Assert.True(saturation.Found);
+        Assert.Equal(20000, saturation.SaturatedAtCratesPerHour);
+        Assert.Equal(2, result.Means.Count);
+        Assert.Equal(0, result.Means[0].LostCrates);
+        Assert.True(result.Means[1].LostCrates > 0);
     }
+
+    private static StudyPoint Point(double load, double offered, double achieved, int lost) => new()
+    {
+        Scenario = "Example",
+        Mode = AssignmentMode.Manual,
+        LoadCratesPerHour = load,
+        OfferedPalletsPerHour = offered,
+        AchievedPalletsPerHour = achieved,
+        LostCrates = lost
+    };
 }

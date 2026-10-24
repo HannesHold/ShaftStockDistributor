@@ -2,221 +2,144 @@ using ShaftStockDistributor.Core;
 
 namespace ShaftStockDistributor.Optimizer;
 
-public enum OptimizationStart
-{
-    /// <summary>Ignore unpinned shafts and build a new constructive assignment around the pins.</summary>
-    Constructive = 0,
-
-    /// <summary>Keep the current unpinned placement, fill missing demand, then search.</summary>
-    KeepCurrent = 1
-}
-
-public sealed class OptimizationResult
-{
-    public required Assignment Assignment { get; init; }
-
-    public required CostBreakdown ConstructiveCost { get; init; }
-
-    public required CostBreakdown FinalCost { get; init; }
-
-    public int AcceptedMoves { get; init; }
-
-    public int Iterations { get; init; }
-}
-
 public static class AnnealingOptimizer
 {
-    public static OptimizationResult Optimize(
-        Layout layout,
-        ArticleSet articles,
-        PlanningParameters parameters,
-        Assignment? existing = null,
-        OptimizationStart start = OptimizationStart.Constructive)
+    public static OptimizationResult Run(
+        DistributorProject project,
+        IProgress<OptimizeProgress>? progress = null,
+        CancellationToken cancellationToken = default,
+        int? iterations = null)
     {
-        var seed = BuildStart(layout, articles, parameters, existing, start);
-        var improved = Search(layout, articles, parameters, seed);
-        improved.Assignment.ExampleData = existing?.ExampleData ?? articles.ExampleData;
-        if (string.IsNullOrWhiteSpace(improved.Assignment.Notes))
-        {
-            improved.Assignment.Notes = "Optimized assignment. Pinned shafts were left unchanged.";
-        }
+        var beforeSlots = ProjectGrid.Materialize(project);
+        var before = AssignmentCostModel.Evaluate(project, beforeSlots);
+        var naiveSlots = AssignmentBuilder.Naive(project);
+        var naive = AssignmentCostModel.Evaluate(project, naiveSlots);
 
-        return improved;
-    }
-
-    private static Assignment BuildStart(
-        Layout layout,
-        ArticleSet articles,
-        PlanningParameters parameters,
-        Assignment? existing,
-        OptimizationStart start)
-    {
-        Assignment? locked = null;
-        if (existing is not null)
-        {
-            locked = new Assignment();
-            foreach (var (location, shaftAssignment) in existing.Shafts)
-            {
-                if (shaftAssignment.Pinned || start == OptimizationStart.KeepCurrent)
-                {
-                    locked.Set(location, shaftAssignment.ArticleId, pinned: true);
-                }
-            }
-        }
-
-        var built = ConstructiveAssigner.Build(layout, articles, parameters, locked);
-        if (start == OptimizationStart.KeepCurrent && existing is not null)
-        {
-            foreach (var location in built.Shafts.Keys.ToList())
-            {
-                var current = built.Shafts[location];
-                var pinned = existing.TryGet(location, out var original) && original.Pinned;
-                built.Set(location, current.ArticleId, pinned);
-            }
-        }
-
-        return built;
-    }
-
-    private static OptimizationResult Search(
-        Layout layout,
-        ArticleSet articles,
-        PlanningParameters parameters,
-        Assignment start)
-    {
-        var annealing = parameters.Annealing;
-        var iterations = Math.Max(0, annealing.Iterations);
-        var current = start.Clone();
-        var currentCost = AssignmentCost.Evaluate(layout, articles, current, parameters);
-        var best = current.Clone();
+        int steps = Math.Max(0, iterations ?? project.Optimizer.Iterations);
+        var current = AssignmentBuilder.Constructive(project);
+        var currentCost = AssignmentCostModel.Evaluate(project, current);
+        var best = Clone(current);
         var bestCost = currentCost;
-        var accepted = 0;
-        var temperature = Math.Max(1e-6, annealing.InitialTemperature);
-        var cooling = annealing.Cooling <= 0 || annealing.Cooling >= 1 ? 0.997 : annealing.Cooling;
-        var random = new Random(annealing.Seed);
-        var demand = ShaftDemandCalculator.ForArticles(layout, articles, InflowResolver.Resolve(articles), parameters);
-        var locations = layout.Shafts.Select(shaft => shaft.Location).ToList();
+        var random = new Random(project.Optimizer.Seed);
+        double temperature = Math.Max(0.02, bestCost.Total * 0.08);
+        double cooling = project.Optimizer.Cooling is > 0 and < 1 ? project.Optimizer.Cooling : 0.997;
 
-        for (var iteration = 0; iteration < iterations; iteration++)
+        for (int iteration = 1; iteration <= steps; iteration++)
         {
-            Assignment? candidate = null;
-            for (var attempt = 0; attempt < 8 && candidate is null; attempt++)
+            cancellationToken.ThrowIfCancellationRequested();
+            var neighbor = Mutate(current, random);
+            var neighborCost = AssignmentCostModel.Evaluate(project, neighbor);
+            double delta = neighborCost.Total - currentCost.Total;
+            if (delta <= 0 || random.NextDouble() < Math.Exp(-delta / Math.Max(temperature, 1e-9)))
             {
-                candidate = TryMutate(current, locations, articles, demand, random);
-            }
-
-            if (candidate is null)
-            {
-                temperature *= cooling;
-                continue;
-            }
-
-            var cost = AssignmentCost.Evaluate(layout, articles, candidate, parameters);
-            var delta = cost.Total - currentCost.Total;
-            var accept = delta <= 0 || random.NextDouble() < Math.Exp(-delta / temperature);
-            if (accept && !double.IsNaN(cost.Total) && !double.IsPositiveInfinity(cost.Total))
-            {
-                current = candidate;
-                currentCost = cost;
-                accepted++;
-                if (cost.Total < bestCost.Total)
+                current = neighbor;
+                currentCost = neighborCost;
+                if (neighborCost.Total + 1e-12 < bestCost.Total)
                 {
-                    best = candidate.Clone();
-                    bestCost = cost;
+                    best = Clone(neighbor);
+                    bestCost = neighborCost;
                 }
             }
 
             temperature *= cooling;
+            if (iteration == steps || iteration % 25 == 0)
+            {
+                progress?.Report(new OptimizeProgress
+                {
+                    Iteration = iteration,
+                    Iterations = steps,
+                    Temperature = temperature,
+                    CurrentCost = currentCost.Total,
+                    BestCost = bestCost.Total
+                });
+            }
         }
 
-        best.Notes = "Optimized by simulated annealing. Pinned shafts were left unchanged.";
+        if (steps == 0)
+        {
+            progress?.Report(new OptimizeProgress
+            {
+                Iteration = 0,
+                Iterations = 0,
+                Temperature = temperature,
+                CurrentCost = bestCost.Total,
+                BestCost = bestCost.Total
+            });
+        }
+
         return new OptimizationResult
         {
-            Assignment = best,
-            ConstructiveCost = AssignmentCost.Evaluate(layout, articles, start, parameters),
-            FinalCost = bestCost,
-            AcceptedMoves = accepted,
-            Iterations = iterations
+            Assignments = best,
+            Before = before,
+            Naive = naive,
+            Optimized = bestCost,
+            Iterations = steps,
+            ChangedShafts = CountChanges(beforeSlots, best)
         };
     }
 
-    private static Assignment? TryMutate(
-        Assignment current,
-        List<ShaftLocation> locations,
-        ArticleSet articles,
-        IReadOnlyDictionary<string, int> demand,
-        Random random)
+    private static int CountChanges(List<ShaftAssignment> left, List<ShaftAssignment> right)
     {
-        if (locations.Count == 0 || articles.Items.Count == 0)
+        var map = right.ToDictionary(slot => slot.Address);
+        int changes = 0;
+        foreach (var slot in left)
         {
-            return null;
+            if (!map.TryGetValue(slot.Address, out var other) || other.ArticleId != slot.ArticleId)
+            {
+                changes++;
+            }
         }
 
-        var assigned = current.Shafts.Where(pair => !pair.Value.Pinned).Select(pair => pair.Key).ToList();
-        var empty = locations.Where(location => !current.Contains(location)).ToList();
-        var roll = random.Next(4);
-        var next = current.Clone();
+        return changes;
+    }
 
-        if (roll == 0 && assigned.Count >= 2)
+    private static List<ShaftAssignment> Mutate(List<ShaftAssignment> source, Random random)
+    {
+        var next = Clone(source);
+        var movable = new List<int>();
+        for (int index = 0; index < next.Count; index++)
         {
-            var left = assigned[random.Next(assigned.Count)];
-            var right = assigned[random.Next(assigned.Count)];
-            if (left == right)
+            if (!next[index].Pinned)
             {
-                return null;
+                movable.Add(index);
             }
+        }
 
-            var leftArticle = next.Shafts[left].ArticleId;
-            var rightArticle = next.Shafts[right].ArticleId;
-            if (leftArticle == rightArticle)
-            {
-                return null;
-            }
-
-            next.Set(left, rightArticle, pinned: false);
-            next.Set(right, leftArticle, pinned: false);
+        if (movable.Count < 2)
+        {
             return next;
         }
 
-        if (roll == 1 && assigned.Count >= 1 && empty.Count >= 1)
+        int first = movable[random.Next(movable.Count)];
+        int second = movable[random.Next(movable.Count)];
+        if (first == second)
         {
-            var from = assigned[random.Next(assigned.Count)];
-            var to = empty[random.Next(empty.Count)];
-            var articleId = next.Shafts[from].ArticleId;
-            next.Remove(from);
-            next.Set(to, articleId, pinned: false);
             return next;
         }
 
-        if (roll == 2 && empty.Count >= 1)
+        bool moveOntoEmpty = random.Next(2) == 0
+            && next[first].ArticleId is not null
+            && next[second].ArticleId is null;
+        if (moveOntoEmpty)
         {
-            var shortArticles = articles.Items
-                .Where(article => next.CountFor(article.Id) < demand.GetValueOrDefault(article.Id))
-                .Select(article => article.Id)
-                .ToList();
-            if (shortArticles.Count == 0)
-            {
-                return null;
-            }
-
-            var articleId = shortArticles[random.Next(shortArticles.Count)];
-            var to = empty[random.Next(empty.Count)];
-            next.Set(to, articleId, pinned: false);
-            return next;
+            next[second].ArticleId = next[first].ArticleId;
+            next[first].ArticleId = null;
+        }
+        else
+        {
+            (next[first].ArticleId, next[second].ArticleId) = (next[second].ArticleId, next[first].ArticleId);
         }
 
-        var surplus = assigned.Where(location =>
-        {
-            var articleId = current.Shafts[location].ArticleId;
-            var needed = Math.Max(1, demand.GetValueOrDefault(articleId));
-            return current.CountFor(articleId) > needed;
-        }).ToList();
-        if (surplus.Count == 0)
-        {
-            return null;
-        }
-
-        next.Remove(surplus[random.Next(surplus.Count)]);
         return next;
     }
+
+    private static List<ShaftAssignment> Clone(List<ShaftAssignment> source) =>
+        source.Select(slot => new ShaftAssignment
+        {
+            Segment = slot.Segment,
+            Level = slot.Level,
+            Shaft = slot.Shaft,
+            ArticleId = slot.ArticleId,
+            Pinned = slot.Pinned
+        }).ToList();
 }
