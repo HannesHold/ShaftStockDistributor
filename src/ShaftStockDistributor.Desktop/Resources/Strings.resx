@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Shaft Stock Distributor</value></data>
+  <data name="Tagline" xml:space="preserve"><value>Plan, simulate, and control returnable-crate shafts</value></data>
+  <data name="ExampleBadge" xml:space="preserve"><value>EXAMPLE DATA</value></data>
+  <data name="NavLive" xml:space="preserve"><value>Live demo</value></data>
+  <data name="NavLayout" xml:space="preserve"><value>Layout</value></data>
+  <data name="NavArticles" xml:space="preserve"><value>Articles</value></data>
+  <data name="NavOptimizer" xml:space="preserve"><value>Optimizer</value></data>
+  <data name="NavStudy" xml:space="preserve"><value>Scenario study</value></data>
+  <data name="NavOperation" xml:space="preserve"><value>Operation</value></data>
+  <data name="New" xml:space="preserve"><value>New</value></data>
+  <data name="Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="ExportJson" xml:space="preserve"><value>Export JSON</value></data>
+  <data name="ExportCsv" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="StartDemo" xml:space="preserve"><value>Start demo</value></data>
+  <data name="ModeAutomatic" xml:space="preserve"><value>Automatic assignment</value></data>
+  <data name="ModeManual" xml:space="preserve"><value>Manual assignment</value></data>
+  <data name="ModeConfirmTitle" xml:space="preserve"><value>Switch assignment mode?</value></data>
+  <data name="ModeConfirmBody" xml:space="preserve"><value>Automatic mode may retarget only empty shafts. Pinned shafts stay as they are. A shaft that still holds crates is never reassigned.</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Switch mode</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Play" xml:space="preserve"><value>Play</value></data>
+  <data name="Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Step" xml:space="preserve"><value>Step</value></data>
+  <data name="Reset" xml:space="preserve"><value>Reset</value></data>
+  <data name="Speed" xml:space="preserve"><value>Speed</value></data>
+  <data name="Seed" xml:space="preserve"><value>Seed</value></data>
+  <data name="Scenario" xml:space="preserve"><value>Scenario</value></data>
+  <data name="Heatmap" xml:space="preserve"><value>Pull heatmap</value></data>
+  <data name="PalletsPerHour" xml:space="preserve"><value>Pallets / hour</value></data>
+  <data name="TotalPallets" xml:space="preserve"><value>Pallets pulled</value></data>
+  <data name="Offered" xml:space="preserve"><value>Offered</value></data>
+  <data name="Utilization" xml:space="preserve"><value>Utilization</value></data>
+  <data name="Shuttle1" xml:space="preserve"><value>Shuttle 1</value></data>
+  <data name="Shuttle2" xml:space="preserve"><value>Shuttle 2</value></data>
+  <data name="AverageWait" xml:space="preserve"><value>Average pull wait</value></data>
+  <data name="Blocked" xml:space="preserve"><value>Blocked time</value></data>
+  <data name="LostCrates" xml:space="preserve"><value>Lost crates</value></data>
+  <data name="Overflowing" xml:space="preserve"><value>Overflowing shafts</value></data>
+  <data name="Pulls" xml:space="preserve"><value>Pulls</value></data>
+  <data name="ClickShaft" xml:space="preserve"><value>Click a shaft to assign an article or pin it.</value></data>
+  <data name="ApplyAssignment" xml:space="preserve"><value>Apply to shaft</value></data>
+  <data name="Pin" xml:space="preserve"><value>Pin</value></data>
+  <data name="Unpin" xml:space="preserve"><value>Unpin</value></data>
+  <data name="SharedLock" xml:space="preserve"><value>Shared zone locked</value></data>
+  <data name="Waiting" xml:space="preserve"><value>Shuttle waiting</value></data>
+  <data name="LayoutTitle" xml:space="preserve"><value>Warehouse layout and shuttle motion</value></data>
+  <data name="ArticlesTitle" xml:space="preserve"><value>Crate types</value></data>
+  <data name="OptimizerTitle" xml:space="preserve"><value>Assignment optimizer</value></data>
+  <data name="StudyTitle" xml:space="preserve"><value>Capacity study</value></data>
+  <data name="OperationTitle" xml:space="preserve"><value>Live operation</value></data>
+  <data name="ShaftLength" xml:space="preserve"><value>Shaft length (m)</value></data>
+  <data name="CrateGap" xml:space="preserve"><value>Gap between crates (m)</value></data>
+  <data name="Segments" xml:space="preserve"><value>Segments</value></data>
+  <data name="Levels" xml:space="preserve"><value>Levels per segment</value></data>
+  <data name="ShaftsPerLevel" xml:space="preserve"><value>Shafts per level</value></data>
+  <data name="Pitch" xml:space="preserve"><value>Shaft pitch (m)</value></data>
+  <data name="LevelHeight" xml:space="preserve"><value>Level height (m)</value></data>
+  <data name="SegmentGap" xml:space="preserve"><value>Segment gap (m)</value></data>
+  <data name="ShaftWidth" xml:space="preserve"><value>Shaft clear width (m, optional)</value></data>
+  <data name="ShaftHeight" xml:space="preserve"><value>Shaft clear height (m, optional)</value></data>
+  <data name="Transfer" xml:space="preserve"><value>Transfer duration (s)</value></data>
+  <data name="Safety" xml:space="preserve"><value>Safety distance (m)</value></data>
+  <data name="HorizontalSpeed" xml:space="preserve"><value>Horizontal speed (m/s)</value></data>
+  <data name="VerticalSpeed" xml:space="preserve"><value>Vertical speed (m/s)</value></data>
+  <data name="HorizontalAcceleration" xml:space="preserve"><value>Horizontal acceleration (m/s²)</value></data>
+  <data name="VerticalAcceleration" xml:space="preserve"><value>Vertical acceleration (m/s²)</value></data>
+  <data name="HomeX" xml:space="preserve"><value>Home position X (m)</value></data>
+  <data name="HomeLevel" xml:space="preserve"><value>Home level</value></data>
+  <data name="HandoverX" xml:space="preserve"><value>Handover X (m)</value></data>
+  <data name="HandoverLevel" xml:space="preserve"><value>Handover level</value></data>
+  <data name="Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="AddArticle" xml:space="preserve"><value>Add article</value></data>
+  <data name="RemoveArticle" xml:space="preserve"><value>Remove</value></data>
+  <data name="ArticleId" xml:space="preserve"><value>Id</value></data>
+  <data name="ArticleName" xml:space="preserve"><value>Name</value></data>
+  <data name="ClassLabel" xml:space="preserve"><value>ABC class</value></data>
+  <data name="Length" xml:space="preserve"><value>Length (mm)</value></data>
+  <data name="Width" xml:space="preserve"><value>Width (mm)</value></data>
+  <data name="Height" xml:space="preserve"><value>Height (mm)</value></data>
+  <data name="FlowAxis" xml:space="preserve"><value>Flow direction</value></data>
+  <data name="CratesPerPallet" xml:space="preserve"><value>Crates per pallet</value></data>
+  <data name="Offset" xml:space="preserve"><value>Offset (crates)</value></data>
+  <data name="Weight" xml:space="preserve"><value>Class weight</value></data>
+  <data name="Inflow" xml:space="preserve"><value>Inflow (crates/h)</value></data>
+  <data name="Color" xml:space="preserve"><value>Color</value></data>
+  <data name="RunOptimizer" xml:space="preserve"><value>Run optimizer</value></data>
+  <data name="Iterations" xml:space="preserve"><value>Iterations</value></data>
+  <data name="ExpectedWait" xml:space="preserve"><value>Expected pull wait (s)</value></data>
+  <data name="CostBefore" xml:space="preserve"><value>Cost before</value></data>
+  <data name="CostNaive" xml:space="preserve"><value>Naive baseline</value></data>
+  <data name="CostAfter" xml:space="preserve"><value>Cost after</value></data>
+  <data name="ChangedShafts" xml:space="preserve"><value>Shafts changed</value></data>
+  <data name="RunStudy" xml:space="preserve"><value>Run study</value></data>
+  <data name="MinLoad" xml:space="preserve"><value>Minimum crates/h</value></data>
+  <data name="MaxLoad" xml:space="preserve"><value>Maximum crates/h</value></data>
+  <data name="StepLoad" xml:space="preserve"><value>Step</value></data>
+  <data name="Replications" xml:space="preserve"><value>Replications</value></data>
+  <data name="Duration" xml:space="preserve"><value>Duration (hours)</value></data>
+  <data name="Warmup" xml:space="preserve"><value>Warm-up (hours)</value></data>
+  <data name="Reoptimize" xml:space="preserve"><value>Re-optimize each scenario</value></data>
+  <data name="CompareModes" xml:space="preserve"><value>Compare manual and automatic</value></data>
+  <data name="AchievedRatio" xml:space="preserve"><value>Achieved / offered threshold</value></data>
+  <data name="LostRule" xml:space="preserve"><value>Lost crates mean saturation</value></data>
+  <data name="UtilizationCeiling" xml:space="preserve"><value>Utilization ceiling (blank = off)</value></data>
+  <data name="ExportResults" xml:space="preserve"><value>Export results CSV</value></data>
+  <data name="Saturation" xml:space="preserve"><value>Saturation</value></data>
+  <data name="Sustainable" xml:space="preserve"><value>Max sustainable</value></data>
+  <data name="JobQueue" xml:space="preserve"><value>Pull queue</value></data>
+  <data name="EventLog" xml:space="preserve"><value>Event log</value></data>
+  <data name="ValidationTitle" xml:space="preserve"><value>Checks</value></data>
+  <data name="NoIssues" xml:space="preserve"><value>No validation issues.</value></data>
+  <data name="StatusReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="DemoHint" xml:space="preserve"><value>Example inflows are hypothetical. Start the demo to watch both shuttles work the rack.</value></data>
+  <data name="ZoneShuttle1" xml:space="preserve"><value>Shuttle 1 only</value></data>
+  <data name="ZoneShared" xml:space="preserve"><value>Shared middle</value></data>
+  <data name="ZoneShuttle2" xml:space="preserve"><value>Shuttle 2 only</value></data>
+  <data name="ApplyLayout" xml:space="preserve"><value>Apply layout</value></data>
+  <data name="PlaybackReset" xml:space="preserve"><value>Playback was reset to the start.</value></data>
+  <data name="CannotReassignFilled" xml:space="preserve"><value>That shaft still holds crates, so its article was left unchanged.</value></data>
+  <data name="Saved" xml:space="preserve"><value>Project saved.</value></data>
+  <data name="Exported" xml:space="preserve"><value>Assignment exported.</value></data>
+  <data name="StudyExported" xml:space="preserve"><value>Study results exported.</value></data>
+  <data name="OptimizerRunning" xml:space="preserve"><value>Optimizing assignment…</value></data>
+  <data name="StudyRunning" xml:space="preserve"><value>Running capacity study…</value></data>
+  <data name="Validation_NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="Validation_IdRequired" xml:space="preserve"><value>Id is required.</value></data>
+  <data name="Validation_Positive" xml:space="preserve"><value>Enter a number greater than zero.</value></data>
+  <data name="Validation_NonNegative" xml:space="preserve"><value>Enter zero or a positive number.</value></data>
+  <data name="ClearArticle" xml:space="preserve"><value>(unassigned)</value></data>
+  <data name="SimTime" xml:space="preserve"><value>Simulated time</value></data>
+  <data name="Weights" xml:space="preserve"><value>Cost weights</value></data>
+  <data name="TravelWeight" xml:space="preserve"><value>Travel</value></data>
+  <data name="ImbalanceWeight" xml:space="preserve"><value>Imbalance</value></data>
+  <data name="MiddleWeight" xml:space="preserve"><value>Middle traffic</value></data>
+  <data name="PenaltyWeight" xml:space="preserve"><value>Penalty</value></data>
+  <data name="AddScenario" xml:space="preserve"><value>Add scenario</value></data>
+  <data name="RemoveScenario" xml:space="preserve"><value>Remove scenario</value></data>
+  <data name="ShareA" xml:space="preserve"><value>Class A share</value></data>
+  <data name="ShareB" xml:space="preserve"><value>Class B share</value></data>
+  <data name="ShareC" xml:space="preserve"><value>Class C share</value></data>
+  <data name="TotalInflow" xml:space="preserve"><value>Base total (crates/h)</value></data>
+  <data name="ScenarioName" xml:space="preserve"><value>Scenario name</value></data>
+  <data name="NotReached" xml:space="preserve"><value>not reached in this sweep</value></data>
+  <data name="PalletsUnit" xml:space="preserve"><value>pallets/h</value></data>
+  <data name="Validation_PullNeverTriggers" xml:space="preserve"><value>Article '{0}' never reaches a pull. One shaft holds {1} crates, but a pull needs {2} (pallet {3} + offset {4}).</value></data>
+  <data name="Validation_CrossSection" xml:space="preserve"><value>Article '{0}' does not fit the shaft cross-section ({1} m by {2} m).</value></data>
+  <data name="Validation_ScenarioShares" xml:space="preserve"><value>Scenario '{0}' shares sum to {1}, not 100%. They are scaled to 100% when the scenario is applied.</value></data>
+  <data name="Validation_ShuttleSpeed" xml:space="preserve"><value>{0} needs a {1} speed greater than zero.</value></data>
+  <data name="Validation_ShaftLength" xml:space="preserve"><value>Shaft length must be greater than zero.</value></data>
+  <data name="Validation_SegmentCount" xml:space="preserve"><value>Segment count must be at least 1.</value></data>
+  <data name="Validation_LevelAboveTypical" xml:space="preserve"><value>This layout has more than 5 levels. The usual rack has at most 5.</value></data>
+  <data name="Validation_ShaftAboveTypical" xml:space="preserve"><value>This layout has more than 9 shafts on a level. The usual rack has at most 9.</value></data>
+</root>

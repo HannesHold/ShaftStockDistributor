@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ShaftStockDistributor.Desktop.ViewModels"
+             xmlns:local="using:ShaftStockDistributor.Desktop"
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+             xmlns:sim="using:ShaftStockDistributor.Simulation"
+             x:Class="ShaftStockDistributor.Desktop.Views.OperationView"
+             x:DataType="vm:OperationViewModel">
+  <Grid RowDefinitions="Auto,*,*" RowSpacing="12">
+    <StackPanel Spacing="6">
+      <TextBlock Text="{x:Static local:UiText.OperationTitle}" Classes="h1" />
+      <TextBlock Text="{Binding ModeHint}" Classes="muted" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <TextBlock Text="{Binding Shuttle1}" />
+        <TextBlock Text="{Binding Shuttle2}" />
+        <Border Classes="chip" IsVisible="{Binding SharedLocked}">
+          <TextBlock Text="{Binding LockText}" Foreground="#F0A202" />
+        </Border>
+      </StackPanel>
+    </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12">
+      <Border Classes="card">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.JobQueue}" Classes="section" />
+          <dg:DataGrid x:CompileBindings="False" ItemsSource="{Binding Jobs}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
+            <dg:DataGrid.Columns>
+              <dg:DataGridTextColumn Header="Job" Binding="{Binding Id}" Width="70" />
+              <dg:DataGridTextColumn Header="Article" Binding="{Binding Article}" Width="*" />
+              <dg:DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="120" />
+              <dg:DataGridTextColumn Header="State" Binding="{Binding State}" Width="110" />
+              <dg:DataGridTextColumn Header="Shuttle" Binding="{Binding Shuttle}" Width="90" />
+              <dg:DataGridTextColumn Header="Crates" Binding="{Binding Crates}" Width="70" />
+            </dg:DataGrid.Columns>
+          </dg:DataGrid>
+        </DockPanel>
+      </Border>
+      <Border Grid.Column="1" Classes="card">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.EventLog}" Classes="section" />
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Events}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" FontSize="12" Margin="0,0,0,4" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+    </Grid>
+    <Border Grid.Row="2" Classes="card">
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Flows}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="sim:ArticleFlowVisual">
+              <Border Background="#101820" CornerRadius="8" Padding="10" Margin="0,0,8,8" MinWidth="180">
+                <StackPanel Spacing="2">
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Border Width="10" Height="10" CornerRadius="5" Background="{Binding ColorHex, Converter={StaticResource HexBrush}}" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                  </StackPanel>
+                  <TextBlock Classes="muted" Text="{Binding ClassName}" />
+                  <TextBlock Classes="muted" Text="{Binding InflowCratesPerHour, StringFormat='{}{0:0} crates/h'}" />
+                  <TextBlock Classes="muted" Text="{Binding LostCrates, StringFormat='Lost {0}'}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

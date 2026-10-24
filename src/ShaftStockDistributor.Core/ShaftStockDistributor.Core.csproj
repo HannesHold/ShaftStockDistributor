@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ShaftStockDistributor.Core</RootNamespace>
+    <Description>Domain model, project files, and validation for shaft assignment.</Description>
+  </PropertyGroup>
+</Project>

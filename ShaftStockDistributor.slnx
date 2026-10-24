@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ShaftStockDistributor.Cli/ShaftStockDistributor.Cli.csproj" />
+    <Project Path="src/ShaftStockDistributor.Core/ShaftStockDistributor.Core.csproj" />
+    <Project Path="src/ShaftStockDistributor.Desktop/ShaftStockDistributor.Desktop.csproj" />
+    <Project Path="src/ShaftStockDistributor.Operations/ShaftStockDistributor.Operations.csproj" />
+    <Project Path="src/ShaftStockDistributor.Optimizer/ShaftStockDistributor.Optimizer.csproj" />
+    <Project Path="src/ShaftStockDistributor.Simulation/ShaftStockDistributor.Simulation.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShaftStockDistributor.Desktop.Tests/ShaftStockDistributor.Desktop.Tests.csproj" />
+    <Project Path="tests/ShaftStockDistributor.Tests/ShaftStockDistributor.Tests.csproj" />
+  </Folder>
+</Solution>

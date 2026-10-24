@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build
+        run: dotnet build ShaftStockDistributor.slnx -c Release -warnaserror
+
+      - name: Test
+        run: dotnet test ShaftStockDistributor.slnx -c Release --no-build
+
+      - name: Publish Windows desktop
+        run: dotnet publish src/ShaftStockDistributor.Desktop/ShaftStockDistributor.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts/win-x64
+
+      - name: Publish Linux desktop
+        run: dotnet publish src/ShaftStockDistributor.Desktop/ShaftStockDistributor.Desktop.csproj -c Release -r linux-x64 --self-contained false -o artifacts/linux-x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shaft-stock-distributor-win-x64
+          path: artifacts/win-x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shaft-stock-distributor-linux-x64
+          path: artifacts/linux-x64

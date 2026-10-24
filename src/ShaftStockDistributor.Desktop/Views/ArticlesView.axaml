@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ShaftStockDistributor.Desktop.ViewModels"
+             xmlns:local="using:ShaftStockDistributor.Desktop"
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+             x:Class="ShaftStockDistributor.Desktop.Views.ArticlesView"
+             x:DataType="vm:ArticlesViewModel">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{x:Static local:UiText.ArticlesTitle}" Classes="h1" VerticalAlignment="Center" />
+      <Button Content="{x:Static local:UiText.AddArticle}" Command="{Binding AddCommand}" />
+      <Button Content="{x:Static local:UiText.RemoveArticle}" Command="{Binding RemoveCommand}" />
+      <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" />
+    </StackPanel>
+    <dg:DataGrid Grid.Row="1" x:CompileBindings="False" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
+      <dg:DataGrid.Columns>
+        <dg:DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="160" />
+        <dg:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+        <dg:DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="80" />
+        <dg:DataGridTextColumn Header="Inflow" Binding="{Binding InflowCratesPerHour}" Width="100" />
+        <dg:DataGridTextColumn Header="Pallet" Binding="{Binding CratesPerPallet}" Width="80" />
+        <dg:DataGridTextColumn Header="Offset" Binding="{Binding Offset}" Width="80" />
+      </dg:DataGrid.Columns>
+    </dg:DataGrid>
+    <Border Grid.Row="2" Classes="card">
+      <StackPanel Spacing="8">
+        <WrapPanel>
+          <StackPanel Width="180" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.ArticleId}" Classes="field" />
+            <TextBox Text="{Binding Draft.Id, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Width="240" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.ArticleName}" Classes="field" />
+            <TextBox Text="{Binding Draft.Name, Mode=TwoWay}" />
+          </StackPanel>
+          <StackPanel Width="140" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.ClassLabel}" Classes="field" />
+            <ComboBox ItemsSource="{Binding Classes}" SelectedItem="{Binding Draft.Class}" />
+          </StackPanel>
+          <StackPanel Width="160" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.FlowAxis}" Classes="field" />
+            <ComboBox ItemsSource="{Binding FlowAxes}" SelectedItem="{Binding Draft.Flow}" />
+          </StackPanel>
+          <StackPanel Width="120" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Length}" Classes="field" />
+            <TextBox Text="{Binding Draft.Length, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="120" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Width}" Classes="field" />
+            <TextBox Text="{Binding Draft.Width, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="120" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Height}" Classes="field" />
+            <TextBox Text="{Binding Draft.Height, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="150" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.CratesPerPallet}" Classes="field" />
+            <TextBox Text="{Binding Draft.CratesPerPallet, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="130" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Offset}" Classes="field" />
+            <TextBox Text="{Binding Draft.Offset, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="120" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Weight}" Classes="field" />
+            <TextBox Text="{Binding Draft.ClassWeight, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="150" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Inflow}" Classes="field" />
+            <TextBox Text="{Binding Draft.Inflow, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+          </StackPanel>
+          <StackPanel Width="120" Margin="0,0,10,8">
+            <TextBlock Text="{x:Static local:UiText.Color}" Classes="field" />
+            <TextBox Text="{Binding Draft.Color, Mode=TwoWay}" />
+          </StackPanel>
+        </WrapPanel>
+        <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Command="{Binding ApplyDraftCommand}" />
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>
