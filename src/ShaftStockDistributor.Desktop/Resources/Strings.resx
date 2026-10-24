@@ -36,7 +36,7 @@
   <data name="PalletsPerHour" xml:space="preserve"><value>Pallets / hour</value></data>
   <data name="TotalPallets" xml:space="preserve"><value>Pallets pulled</value></data>
   <data name="Offered" xml:space="preserve"><value>Offered</value></data>
-  <data name="TheoreticalCapacity" xml:space="preserve"><value>Theoretical capacity</value></data>
+  <data name="TheoreticalCapacity" xml:space="preserve"><value>Upper bound</value></data>
   <data name="Utilization" xml:space="preserve"><value>Utilization</value></data>
   <data name="Shuttle1" xml:space="preserve"><value>Shuttle 1</value></data>
   <data name="Shuttle2" xml:space="preserve"><value>Shuttle 2</value></data>
@@ -150,6 +150,17 @@
   <data name="ScenarioName" xml:space="preserve"><value>Scenario name</value></data>
   <data name="NotReached" xml:space="preserve"><value>not reached in this sweep</value></data>
   <data name="PalletsUnit" xml:space="preserve"><value>pallets/h</value></data>
+  <data name="Playback" xml:space="preserve"><value>Playback</value></data>
+  <data name="SimulationSettings" xml:space="preserve"><value>Simulation</value></data>
+  <data name="ShaftAssignment" xml:space="preserve"><value>Shaft assignment</value></data>
+  <data name="RateWindow" xml:space="preserve"><value>Rate window (min)</value></data>
+  <data name="RateWarmingUp" xml:space="preserve"><value>Warming up</value></data>
+  <data name="RateCumulative" xml:space="preserve"><value>Cumulative {0:0.0}</value></data>
+  <data name="RateWindowAverage" xml:space="preserve"><value>{0:0} min average</value></data>
+  <data name="OpeningExcluded" xml:space="preserve"><value>excl. opening stock</value></data>
+  <data name="OpeningIncluded" xml:space="preserve"><value>incl. {0:0.0} opening stock</value></data>
+  <data name="SteadyRate" xml:space="preserve"><value>Steady pallets per hour</value></data>
+  <data name="UpperBoundTip" xml:space="preserve"><value>Mean travel between shafts a shuttle can serve, plus the transfer, times the most pallets one pull can discharge. The next pull starts at the last shaft, not at home. Shared-zone waiting is ignored, so this is an upper bound.</value></data>
   <data name="Validation_PullNeverTriggers" xml:space="preserve"><value>Article '{0}' never reaches a pull. One shaft holds {1} crates, but a pull needs {2} (pallet {3} + offset {4}).</value></data>
   <data name="Validation_CrossSection" xml:space="preserve"><value>Article '{0}' does not fit the shaft cross-section ({1} m by {2} m).</value></data>
   <data name="Validation_ScenarioShares" xml:space="preserve"><value>Scenario '{0}' shares sum to {1}, not 100%. They are scaled to 100% when the scenario is applied.</value></data>

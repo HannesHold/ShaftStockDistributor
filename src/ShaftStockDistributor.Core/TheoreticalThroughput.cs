@@ -1,10 +1,11 @@
 namespace ShaftStockDistributor.Core;
 
 /// <summary>
-/// Conservative pallet ceiling. Each shuttle repeats a trip from its home to the
-/// average shaft it may serve, then spends the configured transfer time.
-/// One pallet is counted per pull. Shaft-to-shaft trips are often shorter, and a
-/// pull can discharge more than one pallet, so measured throughput can sit above this line.
+/// Upper bound on pallet throughput for the aisle.
+/// Each shuttle repeats the mean shaft-to-shaft trip inside the zone it may serve
+/// (the next pull starts where the last one finished, not at home), then spends the
+/// transfer. Discharge uses the fullest pull that can actually trigger. Shared-zone
+/// waiting is ignored, so a real aisle should stay under this line.
 /// </summary>
 public static class TheoreticalThroughput
 {
@@ -21,28 +22,55 @@ public static class TheoreticalThroughput
             return 0;
         }
 
+        double palletsPerPull = MaxPalletsPerPull(project, geometry);
         double total = 0;
         foreach (var shuttle in project.Shuttles)
         {
             double seconds = MeanCycleSeconds(geometry, shuttle, project.Layout.TransferDurationSeconds);
-            if (seconds <= 1e-6)
+            if (seconds <= 1e-6 || double.IsInfinity(seconds))
             {
                 continue;
             }
 
-            total += 3600.0 / seconds;
+            total += 3600.0 / seconds * palletsPerPull;
         }
 
         return total;
     }
 
+    private static double MaxPalletsPerPull(DistributorProject project, LayoutGeometry geometry)
+    {
+        double max = 0;
+        foreach (var article in project.Articles)
+        {
+            if (article.CratesPerPallet <= 0)
+            {
+                continue;
+            }
+
+            if (article.ClassWeight <= 0 && article.InflowCratesPerHour <= 0)
+            {
+                continue;
+            }
+
+            if (geometry.CapacityFor(article) < article.PullTriggerCrates)
+            {
+                continue;
+            }
+
+            double ratio = article.PullTriggerCrates / (double)article.CratesPerPallet;
+            if (ratio > max)
+            {
+                max = ratio;
+            }
+        }
+
+        return max <= 0 ? 1 : max;
+    }
+
     private static double MeanCycleSeconds(LayoutGeometry geometry, ShuttleSettings shuttle, double transferSeconds)
     {
-        int homeLevel = Math.Clamp(shuttle.Home.Level, 1, Math.Max(1, geometry.Levels));
-        double homeX = shuttle.Home.XMeters;
-        double homeY = geometry.LevelY(homeLevel);
-        double sum = 0;
-        int count = 0;
+        var points = new List<(double X, double Y)>();
         for (int segment = 1; segment <= geometry.SegmentCount; segment++)
         {
             var zone = geometry.ZoneOfSegment(segment);
@@ -55,15 +83,36 @@ public static class TheoreticalThroughput
             {
                 for (int shaft = 1; shaft <= geometry.ShaftsPerLevel; shaft++)
                 {
-                    double x = geometry.ShaftX(segment, shaft);
-                    double y = geometry.LevelY(level);
-                    sum += TravelTime.Simultaneous(x - homeX, y - homeY, shuttle);
-                    count++;
+                    points.Add((geometry.ShaftX(segment, shaft), geometry.LevelY(level)));
                 }
             }
         }
 
-        double travel = count == 0 ? 0 : sum / count;
+        if (points.Count == 0)
+        {
+            return 0;
+        }
+
+        if (points.Count == 1)
+        {
+            return Math.Max(0, transferSeconds);
+        }
+
+        double sum = 0;
+        int pairs = 0;
+        for (int i = 0; i < points.Count; i++)
+        {
+            for (int j = i + 1; j < points.Count; j++)
+            {
+                sum += TravelTime.Simultaneous(
+                    points[j].X - points[i].X,
+                    points[j].Y - points[i].Y,
+                    shuttle);
+                pairs++;
+            }
+        }
+
+        double travel = pairs == 0 ? 0 : sum / pairs;
         return travel + Math.Max(0, transferSeconds);
     }
 }

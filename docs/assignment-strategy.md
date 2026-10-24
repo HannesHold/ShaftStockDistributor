@@ -89,7 +89,7 @@ time = max(horizontal time, vertical time)
 
 Home defaults: shuttle 1 at X = 0, level 1; shuttle 2 at the far end of the aisle, level 1. Handover defaults to the same pose. The optimizer costs a pull as a round trip from **home**, plus the transfer duration (default 12 s), because the real handover pose is unknown. Charging travel back to a different handover would move the "short" shafts and could make level 1 less special. Until that pose is known, the desktop does not add a return-to-handover leg after a pull. The shuttle stays at the shaft it just served, which is also what the simulation does.
 
-The example aisle is about 52.5 m (12 segments of 9 × 0.45 m, plus 11 gaps of 0.35 m). A conservative ceiling assumes each shuttle repeats the mean trip from its home to a shaft it may serve, then spends the 12 s transfer, and that each pull is one pallet. On the example speeds that ceiling is about **100 pallets/h** for the pair. Real trips are often shaft-to-shaft, and a pull discharges the whole shaft, so measured pallets/h can sit above the line. The study chart draws it as a horizontal reference. At the example 1800 crates/h the shuttles are near 32% utilization, well under that ceiling.
+The example aisle is about 52.5 m (12 segments of 9 × 0.45 m, plus 11 gaps of 0.35 m). The chart's upper bound is not that home trip. A pull starts from the shaft the shuttle just served. For each shuttle the bound uses the mean travel time between every pair of shafts in the zone it may serve (its exclusive third plus the shared middle), adds the 12 s transfer, and multiplies by the most pallets one pull of a triggerable article can discharge. On the example that is about **153 pallets/h** for the pair. Shared-zone waiting is ignored, which only lowers real throughput, so a normal run stays under the line. The planner still scores a trip from home, because the handover pose is unknown; that cost is not the capacity line. At the example 1800 crates/h the shuttles are near 32% utilization.
 
 ## Cost and the search
 
@@ -137,7 +137,7 @@ Automatic is a correction for a mix that drifts away from the plan. It is not a 
 
 The study sweeps total crates/h for each named scenario. ABC shares (for example 70/20/10) split that total across classes, then class weight or a per-article weight splits the class. A weight of 0 means no inflow. Shares that do not sum to 1 are scaled and reported as a warning.
 
-Each point is the mean of the replications. The chart draws achieved pallets/h as a solid line and offered pallets/h as a dashed line, one pair per scenario (and per mode, when you compare them). A pale dashed horizontal line is the theoretical shuttle ceiling. A red marker is the saturation load.
+Each point is the mean of the replications. The chart draws achieved pallets/h as a solid line and offered pallets/h as a dashed line, one pair per scenario (and per mode, when you compare them). A white dashed horizontal line is the upper bound from the shaft-to-shaft cycle above. A red marker is the saturation load.
 
 Defaults are 300 to 4000 crates/h in steps of 500, 3 replications, 2.5 h duration, and 1 h warm-up. A short window with no warm-up still looks empty, because the shafts have not reached the pull trigger.
 
@@ -151,7 +151,7 @@ On the committed example sweep (`samples/example-study.csv`, both modes, re-opti
 | EXAMPLE fast movers 85/10/5 | not reached by 4000 crates/h | 107.8 (still tracking offered) |
 | EXAMPLE even mix 40/35/25 | 1800 crates/h | 43.4 |
 
-Balanced and fast-mover curves stay with offered throughput through 4000 crates/h. Utilization there is about 60–68%, under the ~100 pallets/h ceiling, and achieved pallets can exceed that ceiling because a pull is often more than one pallet. There is a dip around 800 crates/h on the balanced curve (about 20 achieved vs 23 offered) where few pulls fall inside the measured hour; the next loads recover, so it is not the knee. The even mix offers more pallets per crate, the shuttles flatten near 70 pallets/h, and the knee is 1800 crates/h. Automatic matches manual on these re-optimized plans. It is the shifted-split run in the previous section that shows automatic helping.
+Balanced and fast-mover curves stay with offered throughput through 4000 crates/h. The highest point on that sweep is 113.8 pallets/h, under the 153 pallets/h upper bound, with utilization about 60–68%. There is a dip around 800 crates/h on the balanced curve (about 20 achieved vs 23 offered) where few pulls fall inside the measured hour; the next loads recover, so it is not the knee. The even mix offers more pallets per crate, the shuttles flatten near 70 pallets/h, and the knee is 1800 crates/h. Automatic matches manual on these re-optimized plans. It is the shifted-split run in the previous section that shows automatic helping.
 
 Recommended use of the splits: 70/20/10 when the catalog really is a few fast movers plus a long tail; 85/10/5 when almost all volume is A and you want to see whether the exclusive zones are enough; 40/35/25 when the mix is flat and middle-aisle traffic will dominate. Re-optimize once per scenario (the study does this by default) because the shaft counts depend on the split. Re-optimizing at every load point would hide the capacity limit of a single assignment; leave that off unless you are asking a different question.
 

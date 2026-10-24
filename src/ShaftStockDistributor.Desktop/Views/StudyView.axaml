@@ -6,11 +6,11 @@
              xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
              x:Class="ShaftStockDistributor.Desktop.Views.StudyView"
              x:DataType="vm:StudyViewModel">
-  <Grid RowDefinitions="Auto,Auto,*,Auto,160" RowSpacing="10">
+  <Grid RowDefinitions="Auto,Auto,*,Auto,148" RowSpacing="8">
     <Grid ColumnDefinitions="*,Auto">
       <StackPanel>
         <TextBlock Text="{x:Static local:UiText.StudyTitle}" Classes="h1" />
-        <TextBlock Text="{Binding Status}" Classes="muted" />
+        <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
         <Button Classes="accent" Content="{x:Static local:UiText.RunStudy}" Command="{Binding RunCommand}" IsEnabled="{Binding !IsBusy}" />
@@ -49,27 +49,27 @@
             <TextBlock Text="{x:Static local:UiText.Iterations}" Classes="field" />
             <TextBox Text="{Binding Iterations, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
           </StackPanel>
-          <StackPanel Width="160" Margin="0,0,10,6">
+          <StackPanel Width="200" Margin="0,0,10,6">
             <TextBlock Text="{x:Static local:UiText.AchievedRatio}" Classes="field" />
             <TextBox Text="{Binding AchievedRatio, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
           </StackPanel>
-          <StackPanel Width="180" Margin="0,0,10,6">
+          <StackPanel Width="230" Margin="0,0,10,6">
             <TextBlock Text="{x:Static local:UiText.UtilizationCeiling}" Classes="field" />
             <TextBox Text="{Binding UtilizationCeiling, Mode=TwoWay}" />
           </StackPanel>
         </WrapPanel>
-        <StackPanel Orientation="Horizontal" Spacing="16">
-          <CheckBox Content="{x:Static local:UiText.Reoptimize}" IsChecked="{Binding Reoptimize}" />
-          <CheckBox Content="{x:Static local:UiText.CompareModes}" IsChecked="{Binding CompareModes}" />
-          <CheckBox Content="{x:Static local:UiText.LostRule}" IsChecked="{Binding LostRule}" />
-          <Button Content="{x:Static local:UiText.AddScenario}" Command="{Binding AddScenarioCommand}" />
-          <Button Content="{x:Static local:UiText.RemoveScenario}" Command="{Binding RemoveScenarioCommand}" />
-        </StackPanel>
+        <WrapPanel>
+          <CheckBox Content="{x:Static local:UiText.Reoptimize}" IsChecked="{Binding Reoptimize}" Margin="0,0,16,6" />
+          <CheckBox Content="{x:Static local:UiText.CompareModes}" IsChecked="{Binding CompareModes}" Margin="0,0,16,6" />
+          <CheckBox Content="{x:Static local:UiText.LostRule}" IsChecked="{Binding LostRule}" Margin="0,0,16,6" />
+          <Button Content="{x:Static local:UiText.AddScenario}" Command="{Binding AddScenarioCommand}" Margin="0,0,8,6" />
+          <Button Content="{x:Static local:UiText.RemoveScenario}" Command="{Binding RemoveScenarioCommand}" Margin="0,0,8,6" />
+        </WrapPanel>
         <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" Height="6" IsVisible="{Binding IsBusy}" />
       </StackPanel>
     </Border>
-    <Border Grid.Row="2" Classes="card" Padding="4" MinHeight="280">
-      <controls:StudyChart Result="{Binding Result}" />
+    <Border Grid.Row="2" Classes="card" Padding="4" MinHeight="140">
+      <controls:StudyChart Result="{Binding Result}" ToolTip.Tip="{x:Static local:UiText.UpperBoundTip}" />
     </Border>
     <ItemsControl Grid.Row="3" ItemsSource="{Binding Saturations}">
       <ItemsControl.ItemsPanel>
@@ -79,10 +79,11 @@
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
         <DataTemplate x:DataType="vm:SaturationRow">
-          <Border Classes="card" Margin="0,0,8,0" MaxWidth="420" Padding="10">
+          <Border Classes="card" Margin="0,0,8,8" MinWidth="280" MaxWidth="360" Padding="10">
             <StackPanel>
-              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding Detail}" Classes="muted" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Reason}" Classes="muted" TextWrapping="Wrap" />
             </StackPanel>
           </Border>
         </DataTemplate>
@@ -90,14 +91,14 @@
     </ItemsControl>
     <dg:DataGrid Grid.Row="4" x:CompileBindings="False" ItemsSource="{Binding Rows}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
       <dg:DataGrid.Columns>
-        <dg:DataGridTextColumn Header="Scenario" Binding="{Binding Scenario}" Width="*" />
-        <dg:DataGridTextColumn Header="Mode" Binding="{Binding Mode}" Width="110" />
-        <dg:DataGridTextColumn Header="Load" Binding="{Binding Load}" Width="80" />
-        <dg:DataGridTextColumn Header="Offered" Binding="{Binding Offered}" Width="80" />
-        <dg:DataGridTextColumn Header="Achieved" Binding="{Binding Achieved}" Width="90" />
-        <dg:DataGridTextColumn Header="Utilization" Binding="{Binding Utilization}" Width="110" />
-        <dg:DataGridTextColumn Header="Lost" Binding="{Binding Lost}" Width="70" />
-        <dg:DataGridTextColumn Header="Blocked" Binding="{Binding Blocked}" Width="80" />
+        <dg:DataGridTextColumn Header="Scenario" Binding="{Binding Scenario}" Width="*" MinWidth="180" />
+        <dg:DataGridTextColumn Header="Mode" Binding="{Binding Mode}" Width="120" />
+        <dg:DataGridTextColumn Header="Load" Binding="{Binding Load}" Width="90" />
+        <dg:DataGridTextColumn Header="Offered" Binding="{Binding Offered}" Width="110" />
+        <dg:DataGridTextColumn Header="Achieved" Binding="{Binding Achieved}" Width="120" />
+        <dg:DataGridTextColumn Header="Utilization" Binding="{Binding Utilization}" Width="140" />
+        <dg:DataGridTextColumn Header="Lost" Binding="{Binding Lost}" Width="80" />
+        <dg:DataGridTextColumn Header="Blocked" Binding="{Binding Blocked}" Width="110" />
       </dg:DataGrid.Columns>
     </dg:DataGrid>
   </Grid>

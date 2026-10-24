@@ -8,7 +8,7 @@ using ShaftStockDistributor.Simulation;
 namespace ShaftStockDistributor.Desktop.Controls;
 
 /// <summary>
-/// Offered and achieved pallets per hour, the saturation knee, and the theoretical shuttle ceiling.
+/// Offered and achieved pallets per hour, the saturation knee, and the shuttle upper bound.
 /// Drawn with Avalonia so a headless capture shows the curves rather than an empty plot.
 /// </summary>
 public sealed class StudyChart : Control
@@ -66,11 +66,18 @@ public sealed class StudyChart : Control
         }
 
         maxY *= 1.08;
-        const double padL = 52;
+        const double padL = 54;
         const double padR = 16;
-        const double padB = 36;
-        double legendRows = Math.Ceiling((groups.Count + (result.TheoreticalPalletsPerHour > 0 ? 1 : 0)) / 2.0);
-        double padT = 12 + legendRows * 18;
+        const double padB = 32;
+        var legendLabels = groups.Select(group => group.Key).ToList();
+        if (result.TheoreticalPalletsPerHour > 0)
+        {
+            legendLabels.Add(UiText.TheoreticalCapacity);
+        }
+
+        double legendWidth = Math.Max(80, bounds.Width - padL - padR);
+        int legendRows = CountRows(legendLabels, legendWidth, 12);
+        double padT = 8 + legendRows * 18;
         var plot = new Rect(padL, padT, Math.Max(10, bounds.Width - padL - padR), Math.Max(10, bounds.Height - padT - padB));
 
         var grid = Brush(Color.Parse("#2E3A4A"));
@@ -79,19 +86,24 @@ public sealed class StudyChart : Control
         {
             double y = plot.Bottom - plot.Height * tick / 4.0;
             context.DrawLine(new Pen(grid, 1), new Point(plot.Left, y), new Point(plot.Right, y));
-            DrawText(context, (maxY * tick / 4.0).ToString("0", CultureInfo.InvariantCulture), new Point(4, y - 8), 11, label);
+            string tickText = Math.Max(0, maxY * tick / 4.0).ToString("0", CultureInfo.InvariantCulture);
+            var tickLabel = Format(tickText, 11, label);
+            double labelY = tick == 0 ? y - tickLabel.Height : y - tickLabel.Height / 2;
+            context.DrawText(tickLabel, new Point(Math.Max(2, plot.Left - 8 - tickLabel.Width), labelY));
         }
 
         for (int tick = 0; tick <= 4; tick++)
         {
             double xValue = minX + (maxX - minX) * tick / 4.0;
             double x = plot.Left + plot.Width * tick / 4.0;
-            DrawText(context, xValue.ToString("0", CultureInfo.InvariantCulture), new Point(x - 16, plot.Bottom + 8), 11, label);
+            var xLabel = Format(xValue.ToString("0", CultureInfo.InvariantCulture), 11, label);
+            double originX = Math.Clamp(x - xLabel.Width / 2, 2, Math.Max(2, bounds.Width - xLabel.Width - 2));
+            context.DrawText(xLabel, new Point(originX, plot.Bottom + 6));
         }
 
         int color = 0;
         double legendX = padL;
-        double legendY = 6;
+        double legendY = 4;
         foreach (var group in groups)
         {
             var ink = Palette[color % Palette.Length];
@@ -99,13 +111,15 @@ public sealed class StudyChart : Control
             var ordered = group.OrderBy(point => point.LoadCratesPerHour).ToList();
             DrawPolyline(context, plot, minX, maxX, maxY, ordered.Select(point => (point.LoadCratesPerHour, point.AchievedPalletsPerHour)), ink, 3.2, dashed: false);
             DrawPolyline(context, plot, minX, maxX, maxY, ordered.Select(point => (point.LoadCratesPerHour, point.OfferedPalletsPerHour)), ink, 1.6, dashed: true);
-            DrawText(context, group.Key, new Point(legendX, legendY), 12, Brush(ink));
-            legendX += 280;
-            if (legendX > bounds.Width - 200)
+            var caption = Format(group.Key, 12, Brush(ink));
+            if (legendX > padL && legendX + caption.Width > bounds.Width - padR)
             {
                 legendX = padL;
                 legendY += 18;
             }
+
+            context.DrawText(caption, new Point(legendX, legendY));
+            legendX += caption.Width + 16;
         }
 
         if (result.TheoreticalPalletsPerHour > 0)
@@ -121,7 +135,14 @@ public sealed class StudyChart : Control
                 white,
                 1.8,
                 dashed: true);
-            DrawText(context, UiText.TheoreticalCapacity, new Point(legendX, legendY), 12, Brush(white));
+            var boundCaption = Format(UiText.TheoreticalCapacity, 12, Brush(white));
+            if (legendX > padL && legendX + boundCaption.Width > bounds.Width - padR)
+            {
+                legendX = padL;
+                legendY += 18;
+            }
+
+            context.DrawText(boundCaption, new Point(legendX, legendY));
         }
 
         foreach (var item in result.Saturations.Where(item => item.Found && item.SaturatedAtCratesPerHour is not null))
@@ -216,9 +237,35 @@ public sealed class StudyChart : Control
         return brush;
     }
 
+    private static int CountRows(IReadOnlyList<string> labels, double width, double size)
+    {
+        double x = 0;
+        int rows = 1;
+        foreach (string label in labels)
+        {
+            double labelWidth = Measure(label, size) + 16;
+            if (x > 0 && x + labelWidth > width)
+            {
+                rows++;
+                x = labelWidth;
+            }
+            else
+            {
+                x += labelWidth;
+            }
+        }
+
+        return rows;
+    }
+
+    private static double Measure(string text, double size) =>
+        Format(text, size, Brushes.White).Width;
+
     private static void DrawText(DrawingContext context, string text, Point origin, double size, IBrush brush)
     {
-        var formatted = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, size, brush);
-        context.DrawText(formatted, origin);
+        context.DrawText(Format(text, size, brush), origin);
     }
+
+    private static FormattedText Format(string text, double size, IBrush brush) =>
+        new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, size, brush);
 }

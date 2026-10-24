@@ -18,18 +18,18 @@
         </Border>
       </StackPanel>
     </StackPanel>
-    <Grid Grid.Row="1" ColumnDefinitions="*,280" ColumnSpacing="12">
+    <Grid Grid.Row="1" ColumnDefinitions="*,260" ColumnSpacing="12">
       <Border Classes="card">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.JobQueue}" Classes="section" />
           <dg:DataGrid x:CompileBindings="False" ItemsSource="{Binding Jobs}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
             <dg:DataGrid.Columns>
-              <dg:DataGridTextColumn Header="Job" Binding="{Binding Id}" Width="70" />
-              <dg:DataGridTextColumn Header="Article" Binding="{Binding Article}" Width="*" />
-              <dg:DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="120" />
-              <dg:DataGridTextColumn Header="State" Binding="{Binding State}" Width="110" />
-              <dg:DataGridTextColumn Header="Shuttle" Binding="{Binding Shuttle}" Width="90" />
-              <dg:DataGridTextColumn Header="Crates" Binding="{Binding Crates}" Width="70" />
+              <dg:DataGridTextColumn Header="Job" Binding="{Binding Id}" Width="72" />
+              <dg:DataGridTextColumn Header="Article" Binding="{Binding Article}" Width="*" MinWidth="120" />
+              <dg:DataGridTextColumn Header="Location" Binding="{Binding Location}" Width="130" />
+              <dg:DataGridTextColumn Header="State" Binding="{Binding State}" Width="130" />
+              <dg:DataGridTextColumn Header="Shuttle" Binding="{Binding Shuttle}" Width="110" />
+              <dg:DataGridTextColumn Header="Crates" Binding="{Binding Crates}" Width="80" />
             </dg:DataGrid.Columns>
           </dg:DataGrid>
         </DockPanel>

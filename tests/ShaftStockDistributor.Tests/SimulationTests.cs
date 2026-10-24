@@ -155,6 +155,42 @@ public class StudyTests
         Assert.True(result.Means[1].LostCrates > 0);
     }
 
+    [Fact]
+    public void Warm_start_keeps_opening_stock_out_of_the_steady_count()
+    {
+        var result = SimulationSession.Run(TestWarehouses.SteadySmall(), new SimulationOptions
+        {
+            DurationSeconds = 180,
+            WarmupSeconds = 0,
+            Seed = 1,
+            WarmStart = true
+        });
+        Assert.True(result.OpeningPallets > 1, $"opening {result.OpeningPallets:0.00}");
+        Assert.Equal(result.Pallets, result.OpeningPallets + result.SteadyPallets, 3);
+        Assert.True(result.SteadyPallets < result.Pallets);
+    }
+
+    [Fact]
+    public void Rate_window_reports_a_cumulative_average_until_the_window_is_full()
+    {
+        var rate = new PalletRateWindow();
+        rate.Observe(0, 0);
+        rate.Observe(10 * 60, 10);
+        var early = rate.Read(10 * 60, 20 * 60);
+        Assert.True(early.WarmingUp);
+        Assert.Equal(60, early.PalletsPerHour, 3);
+
+        rate.Observe(20 * 60, 10);
+        var full = rate.Read(20 * 60, 20 * 60);
+        Assert.False(full.WarmingUp);
+        Assert.Equal(30, full.PalletsPerHour, 3);
+
+        rate.Observe(30 * 60, 10);
+        var later = rate.Read(30 * 60, 20 * 60);
+        Assert.False(later.WarmingUp);
+        Assert.Equal(0, later.PalletsPerHour, 3);
+    }
+
     private static StudyPoint Point(double load, double offered, double achieved, int lost) => new()
     {
         Scenario = "Example",

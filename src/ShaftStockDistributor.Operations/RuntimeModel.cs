@@ -35,6 +35,9 @@ public sealed class ShaftRuntime
 
     public int Count { get; set; }
 
+    /// <summary>Crates placed before the run, so the first pull is not steady inflow.</summary>
+    public int OpeningCrates { get; set; }
+
     public int Capacity { get; set; }
 
     public bool TransferLocked { get; set; }
@@ -104,6 +107,12 @@ public sealed class ArticleRuntime
     public int MeasuredLost { get; set; }
 
     public double MeasuredPallets { get; set; }
+
+    /// <summary>Pallets discharged from crates that were already in the shaft at the start.</summary>
+    public double OpeningPallets { get; set; }
+
+    /// <summary>Pallets discharged from crates that arrived during the run.</summary>
+    public double SteadyPallets { get; set; }
 
     public Queue<double> Arrivals { get; } = new();
 }

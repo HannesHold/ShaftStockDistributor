@@ -50,7 +50,11 @@ public sealed class ExampleRunTests
 
         Console.WriteLine($"COST naive {result.Naive}");
         Console.WriteLine($"COST optimized {result.Optimized}");
-        Console.WriteLine($"THEORETICAL {TheoreticalThroughput.PalletsPerHour(optimized):0.00} pallets/h");
+        double bound = TheoreticalThroughput.PalletsPerHour(optimized);
+        Assert.True(bound > optimizedRun.PalletsPerHour, $"upper bound {bound:0.0} sat under measured {optimizedRun.PalletsPerHour:0.0}");
+        Assert.True(bound > shiftedAutomatic.PalletsPerHour, $"upper bound {bound:0.0} sat under shifted {shiftedAutomatic.PalletsPerHour:0.0}");
+        Assert.True(bound > 130 && bound < 300, $"upper bound {bound:0.0} is outside the expected band");
+        Console.WriteLine($"THEORETICAL {bound:0.00} pallets/h");
         Print("optimized manual", optimizedRun);
         Print("optimized automatic", automaticRun);
         Print("naive manual", naiveRun);

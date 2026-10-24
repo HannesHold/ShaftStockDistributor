@@ -88,7 +88,7 @@ The full rationale, with the worked shaft-count example and sketches, is in [doc
 - Travel time is the slower axis. The planner scores trips from home. A return to a separate handover pose is not applied, because that pose is still unknown.
 - Annealing swaps unpinned shafts. The cost is travel hours, shuttle imbalance, shared-zone pull fraction, and a penalty for missing shafts. Default weights are 1, 1.2, 0.8, and 4.
 - Manual mode keeps the stored assignment. Automatic mode may move an empty, unpinned shaft only after the observation window, and only when that article is above its planned shaft count while another article is short. A shaft that still holds crates never changes article.
-- The study chart plots achieved pallets/h (solid), offered pallets/h (dashed), a horizontal theoretical shuttle-capacity line, and a marker where achieved stays under 90% of offered through the rest of the sweep. Defaults are 300–4000 crates/h, 3 replications, 2.5 h with 1 h warm-up.
+- The study chart plots achieved pallets/h (solid), offered pallets/h (dashed), a horizontal upper bound, and a marker where achieved stays under 90% of offered through the rest of the sweep. The bound is mean shaft-to-shaft travel plus the transfer, times the fullest pull, and it ignores shared-zone waiting. Defaults are 300–4000 crates/h, 3 replications, 2.5 h with 1 h warm-up.
 
 ## Sample run
 
@@ -99,7 +99,7 @@ Optimizer, 400 iterations, example warehouse:
 | Naive, articles in order from the left | 1.460 | 0.260 | 1.000 | 0 |
 | Optimized | 0.815 | 0.584 | 0.082 | 0.165 |
 
-Seed 1, 2.5 h simulated with the first hour excluded as warm-up. Offered throughput at the example 1800 crates/h is 52.8 pallets/h. A conservative shuttle ceiling, mean trip from home plus the 12 s transfer and one pallet per pull, is about 100 pallets/h.
+Seed 1, 2.5 h simulated with the first hour excluded as warm-up. Offered throughput at the example 1800 crates/h is 52.8 pallets/h. The upper bound for this aisle is about 153 pallets/h: each shuttle repeats the mean trip between shafts it may serve (the next pull starts where the last one ended), spends the 12 s transfer, and discharges the fullest pull that can trigger (about 1.13 pallets). Shared-zone waiting is not included, so the line sits above the example sweep. The old home-trip line of about 100 pallets/h was not an upper bound; measured points crossed it.
 
 | Assignment | Mode | Pallets/h | Pulls (shuttle 1 / 2) | Utilization | Lost crates |
 | --- | --- | --- | --- | --- | --- |
@@ -114,6 +114,7 @@ On the planned split, automatic makes no reassignments and matches manual. The s
 ## Assumptions
 
 - A pull discharges the whole shaft. Pallets credited equal discharged crates divided by crates per pallet, so the credit can be fractional.
+- The live pallets/hour figure is a sliding window, 20 simulated minutes unless you change it. Before that window has elapsed the card says "Warming up" and shows the cumulative average. Shafts can start full to the pull trigger so the picture moves immediately; those crates are opening stock. They stay in "Pallets pulled" and are left out of the rate.
 - Offered pallets/h is inflow divided by crates per pallet, summed over articles.
 - Arrivals are Poisson, from one `Random` seeded per run. Modern .NET uses the same algorithm on every platform.
 - All shafts share one length. Home and handover default to the aisle ends on level 1.

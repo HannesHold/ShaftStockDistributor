@@ -29,6 +29,12 @@ public sealed class SimulationResult
 
     public double Pallets { get; init; }
 
+    /// <summary>Pallets pulled from crates that were already in the shafts when the run started.</summary>
+    public double OpeningPallets { get; init; }
+
+    /// <summary>Pallets pulled from crates that arrived during the run.</summary>
+    public double SteadyPallets { get; init; }
+
     public double PalletsPerHour { get; init; }
 
     public double OfferedPalletsPerHour { get; init; }

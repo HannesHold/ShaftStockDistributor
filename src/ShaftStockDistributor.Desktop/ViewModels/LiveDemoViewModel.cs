@@ -1,15 +1,12 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using LiveChartsCore;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
 using ShaftStockDistributor.Core;
 using ShaftStockDistributor.Desktop.Abstractions;
 using ShaftStockDistributor.Optimizer;
 using ShaftStockDistributor.Simulation;
-using SkiaSharp;
 
 namespace ShaftStockDistributor.Desktop.ViewModels;
 
@@ -22,25 +19,14 @@ public partial class LiveDemoViewModel : ObservableObject
     private DistributorProject? _project;
     private ShaftAddress? _selected;
     private double _lastSample = -1;
-    private readonly List<(double Time, double Pallets)> _palletTrace = new();
+    private readonly PalletRateWindow _rate = new();
+    private readonly Queue<double> _sampleTimes = new();
 
     public LiveDemoViewModel(IMessenger messenger, IUiClock clock, IOptimizerService optimizer, IProjectStore store)
     {
         _messenger = messenger;
         _optimizer = optimizer;
         _store = store;
-        PalletSeries = new ISeries[]
-        {
-            Line(UiText.PalletsPerHour, new SKColor(76, 141, 255), PalletHistory)
-        };
-        UtilSeries = new ISeries[]
-        {
-            Line(UiText.Shuttle1, new SKColor(76, 141, 255), Util1History),
-            Line(UiText.Shuttle2, new SKColor(240, 162, 2), Util2History)
-        };
-        TimeAxes = new[] { Axis(UiText.SimTime) };
-        PalletAxes = new[] { Axis(UiText.PalletsPerHour) };
-        UtilAxes = new[] { Axis("%") };
         messenger.Register<ProjectChangedMessage>(this, (_, message) => AcceptProject(message.Project));
         _ = clock.Every(TimeSpan.FromMilliseconds(33), OnTick);
     }
@@ -49,25 +35,11 @@ public partial class LiveDemoViewModel : ObservableObject
 
     public ObservableCollection<double> PalletHistory { get; } = new();
 
-    public ObservableCollection<double> Util1History { get; } = new();
-
-    public ObservableCollection<double> Util2History { get; } = new();
-
     public ObservableCollection<ArticleChoice> ArticleChoices { get; } = new();
 
     public ObservableCollection<string> Scenarios { get; } = new();
 
     public ObservableCollection<LegendItem> Legend { get; } = new();
-
-    public ISeries[] PalletSeries { get; }
-
-    public ISeries[] UtilSeries { get; }
-
-    public Axis[] TimeAxes { get; }
-
-    public Axis[] PalletAxes { get; }
-
-    public Axis[] UtilAxes { get; }
 
     [ObservableProperty] private WarehouseSnapshot? _snapshot;
     [ObservableProperty] private bool _isRunning;
@@ -76,7 +48,15 @@ public partial class LiveDemoViewModel : ObservableObject
     [ObservableProperty] private int _seed = 1;
     [ObservableProperty] private bool _showHeatmap;
     [ObservableProperty] private string _status = UiText.DemoHint;
-    [ObservableProperty] private string _palletsPerHourText = "0.0";
+    [ObservableProperty] private string _palletsPerHourText = "—";
+    [ObservableProperty] private string _rateCaption = "";
+    [ObservableProperty] private string _openingNote = "";
+    [ObservableProperty] private string _openingIncludedNote = "";
+    [ObservableProperty] private bool _hasOpeningInventory;
+    [ObservableProperty] private IReadOnlyList<double> _rateSamples = Array.Empty<double>();
+    [ObservableProperty] private double _offeredRate;
+    [ObservableProperty] private double _chartSpanMinutes;
+    [ObservableProperty] private double _rateWindowMinutes = 20;
     [ObservableProperty] private string _totalPalletsText = "0";
     [ObservableProperty] private string _offeredText = "0.0";
     [ObservableProperty] private string _theoreticalText = "0.0";
@@ -302,10 +282,11 @@ public partial class LiveDemoViewModel : ObservableObject
             WarmStart = true
         });
         PalletHistory.Clear();
-        Util1History.Clear();
-        Util2History.Clear();
-        _palletTrace.Clear();
+        _sampleTimes.Clear();
+        _rate.Clear();
         _lastSample = -1;
+        RateSamples = Array.Empty<double>();
+        ChartSpanMinutes = 0;
         Publish();
     }
 
@@ -319,28 +300,24 @@ public partial class LiveDemoViewModel : ObservableObject
         var snapshot = _session.Capture();
         Snapshot = snapshot;
         var kpis = snapshot.Kpis;
-        double rolling = RollingPalletsPerHour(snapshot.TimeSeconds, kpis.Pallets);
-        PalletsPerHourText = rolling.ToString("0.0");
-        TotalPalletsText = kpis.Pallets.ToString("0.0");
-        OfferedText = kpis.OfferedPalletsPerHour.ToString("0.0");
-        Util1Text = kpis.Utilization1.ToString("P0");
-        Util2Text = kpis.Utilization2.ToString("P0");
-        WaitText = $"{kpis.AveragePullWaitSeconds:0} s";
-        BlockedText = $"{kpis.BlockedSeconds:0} s";
-        LostText = kpis.LostCrates.ToString();
-        PullsText = $"{kpis.PullsShuttle1} / {kpis.PullsShuttle2}";
-        TimeText = TimeSpan.FromSeconds(Math.Max(0, snapshot.TimeSeconds)).ToString(@"hh\:mm\:ss");
+        _rate.Observe(snapshot.TimeSeconds, kpis.SteadyPallets);
+        var reading = _rate.Read(snapshot.TimeSeconds, WindowSeconds);
+        ApplyRate(reading, kpis);
         SharedLocked = snapshot.SharedZoneLocked;
         ShuttleWaiting = snapshot.AnyShuttleBlocked;
-        if (_lastSample < 0 || snapshot.TimeSeconds - _lastSample >= 25)
+        if (!reading.WarmingUp && (_lastSample < 0 || snapshot.TimeSeconds - _lastSample >= 25))
         {
             _lastSample = snapshot.TimeSeconds;
-            PalletHistory.Add(rolling);
-            Util1History.Add(kpis.Utilization1 * 100);
-            Util2History.Add(kpis.Utilization2 * 100);
-            Trim(PalletHistory);
-            Trim(Util1History);
-            Trim(Util2History);
+            PalletHistory.Add(reading.PalletsPerHour);
+            _sampleTimes.Enqueue(snapshot.TimeSeconds);
+            while (PalletHistory.Count > 80)
+            {
+                PalletHistory.RemoveAt(0);
+                _sampleTimes.Dequeue();
+            }
+
+            RateSamples = PalletHistory.ToArray();
+            ChartSpanMinutes = _sampleTimes.Count == 0 ? 0 : (snapshot.TimeSeconds - _sampleTimes.Peek()) / 60.0;
         }
 
         Legend.Clear();
@@ -352,52 +329,91 @@ public partial class LiveDemoViewModel : ObservableObject
         _messenger.Send(new SimulationUpdatedMessage { Snapshot = snapshot });
     }
 
-    private double RollingPalletsPerHour(double now, double pallets)
+    private double WindowSeconds => Math.Clamp(RateWindowMinutes, 5, 180) * 60.0;
+
+    partial void OnRateWindowMinutesChanged(double value)
     {
-        _palletTrace.Add((now, pallets));
-        double start = now - 600;
-        while (_palletTrace.Count > 1 && _palletTrace[0].Time < start)
+        double clamped = Math.Clamp(value, 5, 180);
+        if (Math.Abs(clamped - value) > 1e-6)
         {
-            _palletTrace.RemoveAt(0);
+            RateWindowMinutes = clamped;
+            return;
         }
 
-        var first = _palletTrace[0];
-        double elapsed = now - first.Time;
-        if (elapsed < 1)
+        RebuildChart();
+        if (_session is not null)
         {
-            return 0;
-        }
-
-        return Math.Max(0, (pallets - first.Pallets) / elapsed * 3600.0);
-    }
-
-    private static void Trim(ObservableCollection<double> values)
-    {
-        while (values.Count > 80)
-        {
-            values.RemoveAt(0);
+            var reading = _rate.Read(_session.Now, WindowSeconds);
+            var kpis = _session.ToResult();
+            ApplyRate(reading, kpis);
         }
     }
 
-    private static LineSeries<double> Line(string name, SKColor color, ObservableCollection<double> values) => new()
+    private void ApplyRate(RateReading reading, SimulationResult kpis)
     {
-        Name = name,
-        Values = values,
-        GeometrySize = 0,
-        Fill = null,
-        LineSmoothness = 0.3,
-        Stroke = new SolidColorPaint(color, 3.5f)
-    };
+        OfferedRate = kpis.OfferedPalletsPerHour;
+        OfferedText = kpis.OfferedPalletsPerHour.ToString("0.0", CultureInfo.InvariantCulture);
+        TotalPalletsText = kpis.Pallets.ToString("0.0", CultureInfo.InvariantCulture);
+        HasOpeningInventory = kpis.OpeningPallets > 0.05;
+        OpeningNote = HasOpeningInventory ? UiText.OpeningExcluded : "";
+        OpeningIncludedNote = HasOpeningInventory
+            ? string.Format(CultureInfo.InvariantCulture, UiText.OpeningIncluded, kpis.OpeningPallets)
+            : "";
+        if (reading.WarmingUp)
+        {
+            PalletsPerHourText = UiText.RateWarmingUp;
+            RateCaption = string.Format(CultureInfo.InvariantCulture, UiText.RateCumulative, reading.PalletsPerHour);
+        }
+        else
+        {
+            PalletsPerHourText = reading.PalletsPerHour.ToString("0.0", CultureInfo.InvariantCulture);
+            RateCaption = string.Format(CultureInfo.InvariantCulture, UiText.RateWindowAverage, RateWindowMinutes);
+        }
 
-    private static Axis Axis(string name) => new()
+        Util1Text = kpis.Utilization1.ToString("P0", CultureInfo.InvariantCulture);
+        Util2Text = kpis.Utilization2.ToString("P0", CultureInfo.InvariantCulture);
+        WaitText = $"{kpis.AveragePullWaitSeconds:0} s";
+        BlockedText = $"{kpis.BlockedSeconds:0} s";
+        LostText = kpis.LostCrates.ToString(CultureInfo.InvariantCulture);
+        PullsText = $"{kpis.PullsShuttle1} / {kpis.PullsShuttle2}";
+        if (_session is not null)
+        {
+            TimeText = TimeSpan.FromSeconds(Math.Max(0, _session.Now)).ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture);
+        }
+    }
+
+    private void RebuildChart()
     {
-        Name = name,
-        NamePaint = new SolidColorPaint(new SKColor(180, 196, 214)),
-        LabelsPaint = new SolidColorPaint(new SKColor(154, 171, 188)),
-        SeparatorsPaint = new SolidColorPaint(new SKColor(46, 58, 74)),
-        TextSize = 11,
-        NameTextSize = 12
-    };
+        PalletHistory.Clear();
+        _sampleTimes.Clear();
+        _lastSample = -1;
+        double window = WindowSeconds;
+        foreach (var point in _rate.Points)
+        {
+            if (point.Time < window)
+            {
+                continue;
+            }
+
+            if (_lastSample >= 0 && point.Time - _lastSample < 25)
+            {
+                continue;
+            }
+
+            _lastSample = point.Time;
+            PalletHistory.Add(_rate.Read(point.Time, window).PalletsPerHour);
+            _sampleTimes.Enqueue(point.Time);
+        }
+
+        while (PalletHistory.Count > 80)
+        {
+            PalletHistory.RemoveAt(0);
+            _sampleTimes.Dequeue();
+        }
+
+        RateSamples = PalletHistory.ToArray();
+        ChartSpanMinutes = _sampleTimes.Count == 0 ? 0 : (_sampleTimes.Last() - _sampleTimes.Peek()) / 60.0;
+    }
 }
 
 public sealed class LegendItem

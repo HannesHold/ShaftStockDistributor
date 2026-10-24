@@ -87,6 +87,14 @@ public class CapacityAndTravelTests
         double end = TravelTime.Position(1, 1.3, 0.3, 0.2, triangular);
         Assert.Equal(1.3, end, 6);
     }
+
+    [Fact]
+    public void Example_upper_bound_uses_shaft_to_shaft_travel_and_stays_above_the_sweep()
+    {
+        double bound = TheoreticalThroughput.PalletsPerHour(ExampleWarehouse.Create());
+        Assert.True(bound > 113.8, $"upper bound {bound:0.0} is below the balanced study peak");
+        Assert.True(bound < 300, $"upper bound {bound:0.0} collapsed toward a transfer-only ceiling");
+    }
 }
 
 public class ProjectFileTests

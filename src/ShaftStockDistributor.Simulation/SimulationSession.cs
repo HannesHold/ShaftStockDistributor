@@ -97,6 +97,8 @@ public sealed class SimulationSession
             WarmupSeconds = _options.WarmupSeconds,
             MeasuredSeconds = measured,
             Pallets = pallets,
+            OpeningPallets = Controller.OpeningPallets,
+            SteadyPallets = Controller.SteadyPallets,
             PalletsPerHour = hours <= 1e-12 ? 0 : pallets / hours,
             OfferedPalletsPerHour = InflowAllocator.OfferedPalletsPerHour(Controller.Project.Articles),
             PullsShuttle1 = Controller.Shuttles.First(shuttle => shuttle.Id == ShuttleId.Shuttle1).MeasuredPulls,
@@ -133,6 +135,7 @@ public sealed class SimulationSession
 
             int target = Math.Min(shaft.Capacity, Math.Max(0, article.PullTriggerCrates));
             Controller.OnShaftCountReported(shaft.Address, target, 0);
+            shaft.OpeningCrates = shaft.Count;
         }
     }
 

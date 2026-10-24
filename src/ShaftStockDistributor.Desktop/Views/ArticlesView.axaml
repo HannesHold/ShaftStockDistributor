@@ -14,12 +14,12 @@
     </StackPanel>
     <dg:DataGrid Grid.Row="1" x:CompileBindings="False" ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal">
       <dg:DataGrid.Columns>
-        <dg:DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="160" />
-        <dg:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+        <dg:DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="170" />
+        <dg:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" MinWidth="160" />
         <dg:DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="80" />
         <dg:DataGridTextColumn Header="Inflow" Binding="{Binding InflowCratesPerHour}" Width="100" />
-        <dg:DataGridTextColumn Header="Pallet" Binding="{Binding CratesPerPallet}" Width="80" />
-        <dg:DataGridTextColumn Header="Offset" Binding="{Binding Offset}" Width="80" />
+        <dg:DataGridTextColumn Header="Pallet" Binding="{Binding CratesPerPallet}" Width="90" />
+        <dg:DataGridTextColumn Header="Offset" Binding="{Binding Offset}" Width="90" />
       </dg:DataGrid.Columns>
     </dg:DataGrid>
     <Border Grid.Row="2" Classes="card">

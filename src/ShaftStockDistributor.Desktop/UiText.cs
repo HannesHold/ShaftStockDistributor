@@ -155,6 +155,17 @@ public static class UiText
     public static string ScenarioName => S();
     public static string NotReached => S();
     public static string PalletsUnit => S();
+    public static string Playback => S();
+    public static string SimulationSettings => S();
+    public static string ShaftAssignment => S();
+    public static string RateWindow => S();
+    public static string RateWarmingUp => S();
+    public static string RateCumulative => S();
+    public static string RateWindowAverage => S();
+    public static string OpeningExcluded => S();
+    public static string OpeningIncluded => S();
+    public static string SteadyRate => S();
+    public static string UpperBoundTip => S();
 
     public static string FormatIssue(ShaftStockDistributor.Core.ValidationIssue issue)
     {

@@ -65,45 +65,81 @@
       </Border>
       <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
         <Border Classes="card" DataContext="{Binding Shuttle1}">
-          <StackPanel Spacing="8" x:DataType="vm:ShuttleDraft" x:CompileBindings="False">
+          <StackPanel x:DataType="vm:ShuttleDraft" x:CompileBindings="False">
             <TextBlock Text="{x:Static local:UiText.Shuttle1}" Classes="section" />
-            <TextBlock Text="{x:Static local:UiText.HorizontalSpeed}" Classes="field" />
-            <TextBox Text="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.VerticalSpeed}" Classes="field" />
-            <TextBox Text="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HorizontalAcceleration}" Classes="field" />
-            <TextBox Text="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.VerticalAcceleration}" Classes="field" />
-            <TextBox Text="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HomeX}" Classes="field" />
-            <TextBox Text="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HomeLevel}" Classes="field" />
-            <TextBox Text="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HandoverX}" Classes="field" />
-            <TextBox Text="{Binding HandoverX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HandoverLevel}" Classes="field" />
-            <TextBox Text="{Binding HandoverLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+            <WrapPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HorizontalSpeed}" Classes="field" />
+                <TextBox Text="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.VerticalSpeed}" Classes="field" />
+                <TextBox Text="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HorizontalAcceleration}" Classes="field" />
+                <TextBox Text="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.VerticalAcceleration}" Classes="field" />
+                <TextBox Text="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HomeX}" Classes="field" />
+                <TextBox Text="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HomeLevel}" Classes="field" />
+                <TextBox Text="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HandoverX}" Classes="field" />
+                <TextBox Text="{Binding HandoverX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HandoverLevel}" Classes="field" />
+                <TextBox Text="{Binding HandoverLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+            </WrapPanel>
           </StackPanel>
         </Border>
         <Border Grid.Column="1" Classes="card" DataContext="{Binding Shuttle2}">
-          <StackPanel Spacing="8" x:DataType="vm:ShuttleDraft" x:CompileBindings="False">
+          <StackPanel x:DataType="vm:ShuttleDraft" x:CompileBindings="False">
             <TextBlock Text="{x:Static local:UiText.Shuttle2}" Classes="section" />
-            <TextBlock Text="{x:Static local:UiText.HorizontalSpeed}" Classes="field" />
-            <TextBox Text="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.VerticalSpeed}" Classes="field" />
-            <TextBox Text="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HorizontalAcceleration}" Classes="field" />
-            <TextBox Text="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.VerticalAcceleration}" Classes="field" />
-            <TextBox Text="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HomeX}" Classes="field" />
-            <TextBox Text="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HomeLevel}" Classes="field" />
-            <TextBox Text="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HandoverX}" Classes="field" />
-            <TextBox Text="{Binding HandoverX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
-            <TextBlock Text="{x:Static local:UiText.HandoverLevel}" Classes="field" />
-            <TextBox Text="{Binding HandoverLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+            <WrapPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HorizontalSpeed}" Classes="field" />
+                <TextBox Text="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.VerticalSpeed}" Classes="field" />
+                <TextBox Text="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HorizontalAcceleration}" Classes="field" />
+                <TextBox Text="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.VerticalAcceleration}" Classes="field" />
+                <TextBox Text="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HomeX}" Classes="field" />
+                <TextBox Text="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HomeLevel}" Classes="field" />
+                <TextBox Text="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HandoverX}" Classes="field" />
+                <TextBox Text="{Binding HandoverX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+              <StackPanel Width="230" Margin="0,0,8,8">
+                <TextBlock Text="{x:Static local:UiText.HandoverLevel}" Classes="field" />
+                <TextBox Text="{Binding HandoverLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" />
+              </StackPanel>
+            </WrapPanel>
           </StackPanel>
         </Border>
       </Grid>

@@ -118,6 +118,10 @@ public sealed class OperationsController
 
     public double MeasuredPallets => _articles.Values.Sum(article => article.MeasuredPallets);
 
+    public double OpeningPallets => _articles.Values.Sum(article => article.OpeningPallets);
+
+    public double SteadyPallets => _articles.Values.Sum(article => article.SteadyPallets);
+
     public int MeasuredLost => _articles.Values.Sum(article => article.MeasuredLost);
 
     public int WaitSamples => _waitCount;
@@ -425,15 +429,16 @@ public sealed class OperationsController
 
         var shuttle = Shuttle(shuttleId);
         int removed = Math.Min(shaft.FrozenDischarge, shaft.Count);
-        if (_articles.TryGetValue(job.ArticleId, out var article))
+        int openingRemoved = Math.Min(removed, Math.Max(0, shaft.OpeningCrates));
+        shaft.OpeningCrates -= openingRemoved;
+        int steadyRemoved = removed - openingRemoved;
+        if (_articles.TryGetValue(job.ArticleId, out var article) && now >= _warmup && article.Article.CratesPerPallet > 0)
         {
-            double pallets = article.Article.CratesPerPallet > 0
-                ? removed / (double)article.Article.CratesPerPallet
-                : 0;
-            if (now >= _warmup)
-            {
-                article.MeasuredPallets += pallets;
-            }
+            double openingPallets = openingRemoved / (double)article.Article.CratesPerPallet;
+            double steadyPallets = steadyRemoved / (double)article.Article.CratesPerPallet;
+            article.OpeningPallets += openingPallets;
+            article.SteadyPallets += steadyPallets;
+            article.MeasuredPallets += openingPallets + steadyPallets;
         }
 
         shuttle.BusySeconds += Measure(shaft.TransferStart, now);

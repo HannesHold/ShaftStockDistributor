@@ -29,7 +29,10 @@ public sealed class StudyRow
 public sealed class SaturationRow
 {
     public required string Title { get; init; }
+
     public required string Detail { get; init; }
+
+    public string Reason { get; init; } = "";
 }
 
 public partial class StudyViewModel : ObservableObject
@@ -221,7 +224,8 @@ public partial class StudyViewModel : ObservableObject
             Saturations.Add(new SaturationRow
             {
                 Title = $"{item.Scenario} · {item.Mode}",
-                Detail = $"{UiText.Saturation}: {at}. {UiText.Sustainable}: {item.MaxSustainablePalletsPerHour:0.0} {UiText.PalletsUnit}. {item.Reason}"
+                Detail = $"{UiText.Sustainable} {item.MaxSustainablePalletsPerHour:0.0} {UiText.PalletsUnit} · {at}",
+                Reason = item.Reason
             });
         }
 

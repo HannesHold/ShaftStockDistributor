@@ -15,28 +15,24 @@ namespace ShaftStockDistributor.Desktop.Tests;
 public sealed class ScreenshotTests
 {
     [AvaloniaFact]
-    public async Task Renders_live_demo_and_scenario_study()
+    public async Task Renders_every_page_at_both_desktop_sizes()
     {
         var host = Host.CreateDefaultBuilder().ConfigureServices(AppServices.Configure).Build();
         var shell = host.Services.GetRequiredService<ShellViewModel>();
-        var window = new MainWindow
-        {
-            DataContext = shell,
-            Width = 1440,
-            Height = 900
-        };
+        var window = new MainWindow { DataContext = shell };
         window.Show();
+        await Resize(window, 1280, 800);
 
         await shell.StartDemoCommand.ExecuteAsync(null);
         shell.Live.PauseCommand.Execute(null);
         shell.Live.ResetPlaybackCommand.Execute(null);
-        for (int step = 0; step < 24; step++)
+        for (int step = 0; step < 40; step++)
         {
-            shell.Live.AdvanceSeconds(45);
+            shell.Live.AdvanceSeconds(60);
             var snapshot = shell.Live.Snapshot;
             bool moving = snapshot?.Shuttles.Any(shuttle => shuttle.Phase is "Traveling" or "Transferring" or "Waiting") == true;
-            bool charted = shell.Live.PalletHistory.Any(value => value > 0.05);
-            if (moving && charted && snapshot!.Kpis.Pallets > 0)
+            bool pastWindow = snapshot is not null && snapshot.TimeSeconds >= 35 * 60;
+            if (moving && pastWindow && shell.Live.PalletHistory.Count > 0 && snapshot!.Kpis.Pallets > 0)
             {
                 break;
             }
@@ -47,38 +43,71 @@ public sealed class ScreenshotTests
         Assert.Contains(live.Shafts, shaft => shaft.VisualFill > 0.2);
         Assert.Contains(live.Shuttles, shuttle => shuttle.Phase is "Traveling" or "Transferring" or "Waiting");
         Assert.Contains(shell.Live.PalletHistory, value => value > 0.05);
-        Assert.NotEqual("0.0", shell.Live.PalletsPerHourText);
+        Assert.NotEqual(UiText.RateWarmingUp, shell.Live.PalletsPerHourText);
+        Assert.Contains("average", shell.Live.RateCaption, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(UiText.OpeningExcluded, shell.Live.OpeningNote);
+        Assert.Contains("opening", shell.Live.OpeningIncludedNote, StringComparison.OrdinalIgnoreCase);
+        Assert.True(live.Kpis.OpeningPallets > 0);
+        Assert.True(live.Kpis.SteadyPallets < live.Kpis.Pallets);
+        double.TryParse(shell.Live.PalletsPerHourText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double shownRate);
+        Assert.True(shownRate > 5 && shownRate < 120, $"shown rate {shell.Live.PalletsPerHourText}");
         await SettleAsync();
-        var liveFrame = Save(window, "live-demo.png");
-        Assert.True(liveFrame.PixelSize.Width >= 1200, "The live window should render at the desktop size.");
-        Assert.True(UniqueColors(liveFrame) > 12, "The live demo frame should show the rack, not a flat fill.");
+        Save(window, "live-demo.png", 1280);
+
+        await CapturePage(shell, window, "Layout", "layout.png");
+        await CapturePage(shell, window, "Articles", "articles.png");
+        await CapturePage(shell, window, "Optimizer", "optimizer.png");
+        await CapturePage(shell, window, "Operation", "operation.png");
 
         shell.ShowPageCommand.Execute("Study");
         shell.Study.Iterations = 40;
         await shell.Study.RunCommand.ExecuteAsync(null);
         Assert.NotEmpty(shell.Study.Rows);
         Assert.NotEmpty(shell.Study.Saturations);
-        Assert.NotEmpty(shell.Study.StudySeries);
+        Assert.Contains("Max sustainable", shell.Study.Saturations[0].Detail, StringComparison.Ordinal);
         await SettleAsync();
-        var studyFrame = Save(window, "scenario-study.png");
-        Assert.True(studyFrame.PixelSize.Width >= 1200);
-        Assert.True(UniqueColors(studyFrame) > 12, "The study frame should show the chart and table.");
+        Save(window, "scenario-study.png", 1280);
+
+        await Resize(window, 1920, 1080);
+        shell.ShowPageCommand.Execute("Live");
+        await SettleAsync();
+        Save(window, "live-demo-wide.png", 1920);
+        shell.ShowPageCommand.Execute("Study");
+        await SettleAsync();
+        Save(window, "scenario-study-wide.png", 1920);
+    }
+
+    private static async Task CapturePage(ShellViewModel shell, Window window, string page, string fileName)
+    {
+        shell.ShowPageCommand.Execute(page);
+        await SettleAsync();
+        Save(window, fileName, 1280);
+    }
+
+    private static async Task Resize(Window window, int width, int height)
+    {
+        window.Width = width;
+        window.Height = height;
+        await SettleAsync();
     }
 
     private static async Task SettleAsync()
     {
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Loaded);
     }
 
-    private static Bitmap Save(Window window, string fileName)
+    private static Bitmap Save(Window window, string fileName, int expectedWidth)
     {
         var frame = window.CaptureRenderedFrame() ?? throw new InvalidOperationException("Headless capture returned no frame.");
         string directory = Path.Combine(RepoRoot(), "docs", "screenshots");
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, fileName);
         frame.Save(path);
-        Assert.True(new FileInfo(path).Length > 10_000);
+        Assert.True(new FileInfo(path).Length > 10_000, fileName);
+        Assert.True(frame.PixelSize.Width >= expectedWidth - 40, $"{fileName} width {frame.PixelSize.Width}");
+        Assert.True(UniqueColors(frame) > 12, fileName);
         return frame;
     }
 
