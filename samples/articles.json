@@ -1,0 +1,123 @@
+{
+  "formatVersion": 1,
+  "exampleData": true,
+  "notes": "EXAMPLE DATA. Crate types, inflows (crates/hour), pallet quantities, offsets, shaft capacities, and shuttle kinematics are illustrative assumptions for this prototype. They are not measurements from a warehouse. Indexes in these files are one-based (segment 1 is the leftmost rack). ABC shares apply only to articles that omit cratesPerHour. Every sample article sets an explicit rate so the scenario is stable.",
+  "abcDefaults": {
+    "totalCratesPerHour": 1500,
+    "shareA": 0.7,
+    "shareB": 0.2,
+    "shareC": 0.1
+  },
+  "defaultCratesPerPallet": 40,
+  "defaultOffset": 4,
+  "articles": [
+    {
+      "id": "BEER-20-05",
+      "name": "Example: Euro beer crate 20 x 0.5 L",
+      "abcClass": "A",
+      "cratesPerHour": 360,
+      "cratesPerPallet": 40,
+      "offset": 4,
+      "shaftCapacity": 48
+    },
+    {
+      "id": "BEER-24-033",
+      "name": "Example: beer crate 24 x 0.33 L",
+      "abcClass": "A",
+      "cratesPerHour": 280,
+      "cratesPerPallet": 44,
+      "offset": 4,
+      "shaftCapacity": 52
+    },
+    {
+      "id": "BEER-11-05",
+      "name": "Example: NRW beer crate 11 x 0.5 L",
+      "abcClass": "A",
+      "cratesPerHour": 200,
+      "cratesPerPallet": 60,
+      "offset": 6,
+      "shaftCapacity": 72
+    },
+    {
+      "id": "BEER-20-LONG",
+      "name": "Example: long-neck beer crate 20 x 0.5 L",
+      "abcClass": "A",
+      "cratesPerHour": 150,
+      "cratesPerPallet": 40,
+      "offset": 4,
+      "shaftCapacity": 48
+    },
+    {
+      "id": "WATER-12-075",
+      "name": "Example: mineral water crate 12 x 0.75 L",
+      "abcClass": "B",
+      "cratesPerHour": 70,
+      "cratesPerPallet": 32,
+      "offset": 4,
+      "shaftCapacity": 40
+    },
+    {
+      "id": "WATER-12-100",
+      "name": "Example: mineral water crate 12 x 1.0 L",
+      "abcClass": "B",
+      "cratesPerHour": 55,
+      "cratesPerPallet": 24,
+      "offset": 3,
+      "shaftCapacity": 32
+    },
+    {
+      "id": "SODA-12-100",
+      "name": "Example: soft drink crate 12 x 1.0 L",
+      "abcClass": "B",
+      "cratesPerHour": 40,
+      "cratesPerPallet": 24,
+      "offset": 3,
+      "shaftCapacity": 32
+    },
+    {
+      "id": "JUICE-06-100",
+      "name": "Example: juice crate 6 x 1.0 L",
+      "abcClass": "B",
+      "cratesPerHour": 30,
+      "cratesPerPallet": 40,
+      "offset": 4,
+      "shaftCapacity": 48
+    },
+    {
+      "id": "EXPORT-24-033",
+      "name": "Example: export stubby crate 24 x 0.33 L",
+      "abcClass": "B",
+      "cratesPerHour": 25,
+      "cratesPerPallet": 44,
+      "offset": 4,
+      "shaftCapacity": 52
+    },
+    {
+      "id": "WINE-12-075",
+      "name": "Example: wine crate 12 x 0.75 L",
+      "abcClass": "C",
+      "cratesPerHour": 12,
+      "cratesPerPallet": 36,
+      "offset": 4,
+      "shaftCapacity": 44
+    },
+    {
+      "id": "KEG-PARTY",
+      "name": "Example: party-keg crate",
+      "abcClass": "C",
+      "cratesPerHour": 8,
+      "cratesPerPallet": 16,
+      "offset": 2,
+      "shaftCapacity": 22
+    },
+    {
+      "id": "SPIRITS-06",
+      "name": "Example: spirits crate, 6 bottles",
+      "abcClass": "C",
+      "cratesPerHour": 6,
+      "cratesPerPallet": 48,
+      "offset": 4,
+      "shaftCapacity": 56
+    }
+  ]
+}

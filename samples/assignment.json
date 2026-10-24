@@ -1,0 +1,245 @@
+{
+  "formatVersion": 1,
+  "exampleData": true,
+  "notes": "Optimized by simulated annealing. Pinned shafts were left unchanged.",
+  "shafts": [
+    {
+      "segment": 1,
+      "level": 1,
+      "shaft": 6,
+      "articleId": "WATER-12-075",
+      "pinned": false
+    },
+    {
+      "segment": 1,
+      "level": 2,
+      "shaft": 2,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 1,
+      "level": 2,
+      "shaft": 6,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 1,
+      "level": 3,
+      "shaft": 3,
+      "articleId": "WATER-12-100",
+      "pinned": false
+    },
+    {
+      "segment": 1,
+      "level": 4,
+      "shaft": 6,
+      "articleId": "KEG-PARTY",
+      "pinned": false
+    },
+    {
+      "segment": 1,
+      "level": 4,
+      "shaft": 8,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 2,
+      "level": 2,
+      "shaft": 3,
+      "articleId": "SODA-12-100",
+      "pinned": false
+    },
+    {
+      "segment": 2,
+      "level": 4,
+      "shaft": 6,
+      "articleId": "WATER-12-075",
+      "pinned": false
+    },
+    {
+      "segment": 2,
+      "level": 4,
+      "shaft": 8,
+      "articleId": "WINE-12-075",
+      "pinned": false
+    },
+    {
+      "segment": 3,
+      "level": 2,
+      "shaft": 9,
+      "articleId": "BEER-20-LONG",
+      "pinned": false
+    },
+    {
+      "segment": 3,
+      "level": 3,
+      "shaft": 1,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 3,
+      "level": 3,
+      "shaft": 8,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 3,
+      "level": 5,
+      "shaft": 1,
+      "articleId": "BEER-20-LONG",
+      "pinned": false
+    },
+    {
+      "segment": 4,
+      "level": 1,
+      "shaft": 9,
+      "articleId": "BEER-20-LONG",
+      "pinned": false
+    },
+    {
+      "segment": 4,
+      "level": 4,
+      "shaft": 5,
+      "articleId": "BEER-11-05",
+      "pinned": false
+    },
+    {
+      "segment": 9,
+      "level": 1,
+      "shaft": 3,
+      "articleId": "BEER-11-05",
+      "pinned": false
+    },
+    {
+      "segment": 9,
+      "level": 5,
+      "shaft": 6,
+      "articleId": "BEER-11-05",
+      "pinned": false
+    },
+    {
+      "segment": 10,
+      "level": 2,
+      "shaft": 9,
+      "articleId": "BEER-20-LONG",
+      "pinned": false
+    },
+    {
+      "segment": 10,
+      "level": 3,
+      "shaft": 9,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 10,
+      "level": 4,
+      "shaft": 9,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 11,
+      "level": 1,
+      "shaft": 3,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 11,
+      "level": 3,
+      "shaft": 2,
+      "articleId": "JUICE-06-100",
+      "pinned": false
+    },
+    {
+      "segment": 11,
+      "level": 3,
+      "shaft": 8,
+      "articleId": "WATER-12-100",
+      "pinned": false
+    },
+    {
+      "segment": 11,
+      "level": 4,
+      "shaft": 2,
+      "articleId": "SPIRITS-06",
+      "pinned": false
+    },
+    {
+      "segment": 11,
+      "level": 5,
+      "shaft": 8,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 1,
+      "shaft": 3,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 1,
+      "shaft": 7,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 1,
+      "shaft": 9,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 3,
+      "shaft": 9,
+      "articleId": "BEER-20-05",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 4,
+      "shaft": 3,
+      "articleId": "EXPORT-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 4,
+      "shaft": 6,
+      "articleId": "BEER-11-05",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 4,
+      "shaft": 8,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 5,
+      "shaft": 2,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    },
+    {
+      "segment": 12,
+      "level": 5,
+      "shaft": 8,
+      "articleId": "BEER-24-033",
+      "pinned": false
+    }
+  ]
+}

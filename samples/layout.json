@@ -1,0 +1,30 @@
+{
+  "formatVersion": 1,
+  "segmentCount": 12,
+  "levelsPerSegment": 5,
+  "shaftsPerLevel": 9,
+  "defaultShaftCapacity": 48,
+  "shaftPitchMeters": 0.45,
+  "levelHeightMeters": 0.5,
+  "safetyDistanceSegments": 1,
+  "kinematics": {
+    "horizontalSpeedMetersPerSecond": 1.5,
+    "verticalSpeedMetersPerSecond": 0.6,
+    "horizontalAccelerationMetersPerSecondSquared": 0.5,
+    "verticalAccelerationMetersPerSecondSquared": 0.3,
+    "transferDurationSeconds": 30
+  },
+  "shuttle1Home": {
+    "segment": 1,
+    "level": 1,
+    "shaft": 1
+  },
+  "shuttle2Home": {
+    "segment": 12,
+    "level": 1,
+    "shaft": 9
+  },
+  "shaftCapacityOverrides": [],
+  "exampleData": true,
+  "notes": "EXAMPLE DATA. Crate types, inflows (crates/hour), pallet quantities, offsets, shaft capacities, and shuttle kinematics are illustrative assumptions for this prototype. They are not measurements from a warehouse. Indexes in these files are one-based (segment 1 is the leftmost rack). Default geometry: 12 segments x 5 levels x 9 shafts. Shuttle 1 home is the left end at level 1; shuttle 2 home is the right end at level 1."
+}

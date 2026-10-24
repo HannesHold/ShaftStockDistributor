@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "expectedPullWaitSeconds": 300,
+  "weights": {
+    "travel": 1,
+    "imbalance": 2.5,
+    "middleTraffic": 0.35,
+    "violation": 1000000,
+    "shortfall": 10000
+  },
+  "annealing": {
+    "seed": 1,
+    "iterations": 4000,
+    "initialTemperature": 200,
+    "cooling": 0.997
+  },
+  "exampleData": true,
+  "notes": "EXAMPLE DATA. Crate types, inflows (crates/hour), pallet quantities, offsets, shaft capacities, and shuttle kinematics are illustrative assumptions for this prototype. They are not measurements from a warehouse. Indexes in these files are one-based (segment 1 is the leftmost rack). expectedPullWaitSeconds is a planning input for shaft sizing. Annealing weights are dimensionless relative weights on pull-seconds, imbalance, and shared-zone traffic."
+}
