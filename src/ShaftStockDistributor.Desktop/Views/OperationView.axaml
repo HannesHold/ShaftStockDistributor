@@ -11,8 +11,7 @@
       <TextBlock Text="{x:Static local:UiText.OperationTitle}" Classes="h1" />
       <TextBlock Text="{Binding ModeHint}" Classes="muted" TextWrapping="Wrap" />
       <StackPanel Orientation="Horizontal" Spacing="16">
-        <TextBlock Text="{Binding Shuttle1}" />
-        <TextBlock Text="{Binding Shuttle2}" />
+        <TextBlock Text="{Binding ShuttleSummary}" TextWrapping="Wrap" />
         <Border Classes="chip" IsVisible="{Binding SharedLocked}">
           <TextBlock Text="{Binding LockText}" Foreground="#F0A202" />
         </Border>

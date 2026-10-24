@@ -45,6 +45,16 @@
   <data name="Utilization" xml:space="preserve"><value>Utilization</value></data>
   <data name="Shuttle1" xml:space="preserve"><value>Shuttle 1</value></data>
   <data name="Shuttle2" xml:space="preserve"><value>Shuttle 2</value></data>
+  <data name="ShuttlesZones" xml:space="preserve"><value>Shuttles and zones</value></data>
+  <data name="ShuttleZoneHint" xml:space="preserve"><value>Each shuttle serves a segment range. Neighbours may overlap; the overlap is shared and uses collision avoidance. A lower-numbered shuttle stays left of the next one, so they never pass. Every segment needs at least one shuttle. Speed defaults to 0.3 m/s.</value></data>
+  <data name="AddShuttle" xml:space="preserve"><value>Add shuttle</value></data>
+  <data name="RemoveShuttle" xml:space="preserve"><value>Remove shuttle</value></data>
+  <data name="EvenSplit" xml:space="preserve"><value>Even split</value></data>
+  <data name="TwoShuttlePreset" xml:space="preserve"><value>Two-shuttle thirds</value></data>
+  <data name="ShuttleLimit" xml:space="preserve"><value>This layout has {0} segments, so it can hold at most {0} shuttles.</value></data>
+  <data name="ShuttleMinimum" xml:space="preserve"><value>Keep at least one shuttle.</value></data>
+  <data name="EvenSplitApplied" xml:space="preserve"><value>Ranges were split evenly across {0} shuttles. Apply layout to keep them.</value></data>
+  <data name="ThirdsPresetApplied" xml:space="preserve"><value>Two-shuttle thirds preset is ready. Apply layout to keep the shared middle.</value></data>
   <data name="AverageWait" xml:space="preserve"><value>Average pull wait</value></data>
   <data name="Blocked" xml:space="preserve"><value>Blocked time</value></data>
   <data name="LostCrates" xml:space="preserve"><value>Lost crates</value></data>
@@ -145,7 +155,7 @@
   <data name="StatusReady" xml:space="preserve"><value>Ready</value></data>
   <data name="DemoHint" xml:space="preserve"><value>Run simulation plays the current project. Load example project restores the sample warehouse.</value></data>
   <data name="ZoneShuttle1" xml:space="preserve"><value>Shuttle 1 only</value></data>
-  <data name="ZoneShared" xml:space="preserve"><value>Shared middle</value></data>
+  <data name="ZoneShared" xml:space="preserve"><value>Shared</value></data>
   <data name="ZoneShuttle2" xml:space="preserve"><value>Shuttle 2 only</value></data>
   <data name="ApplyLayout" xml:space="preserve"><value>Apply layout</value></data>
   <data name="PlaybackReset" xml:space="preserve"><value>Playback was reset to the start.</value></data>
@@ -196,4 +206,12 @@
   <data name="Validation_ShaftAboveTypical" xml:space="preserve"><value>This layout has more than 9 shafts on a level. The usual rack has at most 9.</value></data>
   <data name="Validation_AddressOutsideLayout" xml:space="preserve"><value>Shaft {0} is outside the current layout.</value></data>
   <data name="Validation_AssignmentIncomplete" xml:space="preserve"><value>The assignment does not cover every shaft in the layout.</value></data>
+  <data name="Validation_ShuttleMissing" xml:space="preserve"><value>Add at least one shuttle.</value></data>
+  <data name="Validation_ShuttleCount" xml:space="preserve"><value>This layout has {0} segments, so it can hold at most {0} shuttles.</value></data>
+  <data name="Validation_DuplicateShuttle" xml:space="preserve"><value>Shuttle {0} is listed more than once.</value></data>
+  <data name="Validation_ShuttleRange" xml:space="preserve"><value>Shuttle {0} covers segments {1}–{2}, which is outside this layout (segments 1–{3}).</value></data>
+  <data name="Validation_ShuttleOrder" xml:space="preserve"><value>Shuttle {0} (segments {1}–{2}) crosses shuttle {3} (segments {4}–{5}). Shuttles cannot pass, so ranges must stay in aisle order.</value></data>
+  <data name="Validation_ShuttleCoverageGap" xml:space="preserve"><value>Segment {0} is not covered by any shuttle.</value></data>
+  <data name="Validation_ShuttleHomeOrder" xml:space="preserve"><value>Shuttle {0} home ({1} m) is left of shuttle {2} ({3} m). Homes must follow aisle order.</value></data>
+  <data name="Validation_ShuttleHomeSpacing" xml:space="preserve"><value>Shuttle {0} and shuttle {1} homes are {2} m apart. They must stay at least {3} m apart.</value></data>
 </root>

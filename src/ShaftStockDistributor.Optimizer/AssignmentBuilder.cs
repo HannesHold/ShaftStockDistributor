@@ -3,8 +3,8 @@ using ShaftStockDistributor.Core;
 namespace ShaftStockDistributor.Optimizer;
 
 /// <summary>
-/// Builds a feasible assignment. A movers go to the exclusive ends, near the shuttle that has spare load.
-/// B and C movers prefer the shared middle. A multi-shaft A article keeps one middle shaft as overflow.
+/// Builds a feasible assignment. A movers go to each shuttle's exclusive segments, near the shuttle that has spare load.
+/// B and C movers prefer a shared overlap. An A article that needs three or more shafts keeps one shared shaft as overflow.
 /// </summary>
 public static class AssignmentBuilder
 {
@@ -43,15 +43,15 @@ public static class AssignmentBuilder
 
     public static List<ShaftAssignment> Constructive(DistributorProject project)
     {
-        var geometry = new LayoutGeometry(project.Layout);
+        var geometry = LayoutGeometry.For(project);
         var slots = ProjectGrid.Materialize(project);
         ClearUnpinned(slots);
         var targets = RemainingTargets(project, slots);
-        var load = new Dictionary<ShuttleId, double>
+        var load = new Dictionary<ShuttleId, double>();
+        foreach (var shuttle in project.Shuttles.OrderBy(shuttle => shuttle.Id))
         {
-            [ShuttleId.Shuttle1] = 0,
-            [ShuttleId.Shuttle2] = 0
-        };
+            load.TryAdd(shuttle.Id, 0);
+        }
 
         foreach (var slot in slots.Where(s => s.Pinned && s.ArticleId is not null))
         {
@@ -93,22 +93,36 @@ public static class AssignmentBuilder
         Article article,
         int remaining)
     {
-        int middle = remaining >= 3 ? 1 : 0;
+        bool shared = geometry.SharedSpans().Count > 0;
+        int middle = remaining >= 3 && shared ? 1 : 0;
         int exclusive = remaining - middle;
         for (int index = 0; index < exclusive; index++)
         {
-            var owner = load[ShuttleId.Shuttle1] <= load[ShuttleId.Shuttle2]
-                ? ShuttleId.Shuttle1
-                : ShuttleId.Shuttle2;
-            var zone = owner == ShuttleId.Shuttle1 ? ZoneKind.Shuttle1Only : ZoneKind.Shuttle2Only;
-            var slot = Nearest(geometry, slots, zone, project.Shuttle(owner), preferNear: true)
-                ?? NearestCenter(geometry, slots)
-                ?? Nearest(
-                    geometry,
-                    slots,
-                    owner == ShuttleId.Shuttle1 ? ZoneKind.Shuttle2Only : ZoneKind.Shuttle1Only,
-                    project.Shuttle(owner == ShuttleId.Shuttle1 ? ShuttleId.Shuttle2 : ShuttleId.Shuttle1),
-                    preferNear: true);
+            if (load.Count == 0)
+            {
+                break;
+            }
+
+            var owner = load.OrderBy(pair => pair.Value).ThenBy(pair => pair.Key).First().Key;
+            var slot = NearestExclusive(project, geometry, slots, owner, preferNear: true)
+                ?? NearestCenter(geometry, slots);
+            if (slot is null)
+            {
+                foreach (var other in load.OrderBy(pair => pair.Value).ThenBy(pair => pair.Key))
+                {
+                    if (other.Key == owner)
+                    {
+                        continue;
+                    }
+
+                    slot = NearestExclusive(project, geometry, slots, other.Key, preferNear: true);
+                    if (slot is not null)
+                    {
+                        break;
+                    }
+                }
+            }
+
             if (slot is null)
             {
                 break;
@@ -140,16 +154,14 @@ public static class AssignmentBuilder
         for (int index = 0; index < remaining; index++)
         {
             var slot = NearestCenter(geometry, slots);
-            if (slot is null)
+            if (slot is null && load.Count > 0)
             {
-                var owner = load[ShuttleId.Shuttle1] <= load[ShuttleId.Shuttle2]
-                    ? ShuttleId.Shuttle1
-                    : ShuttleId.Shuttle2;
-                var zone = owner == ShuttleId.Shuttle1 ? ZoneKind.Shuttle1Only : ZoneKind.Shuttle2Only;
-                slot = Nearest(geometry, slots, zone, project.Shuttle(owner), preferNear: false)
+                var owner = load.OrderBy(pair => pair.Value).ThenBy(pair => pair.Key).First().Key;
+                slot = NearestExclusive(project, geometry, slots, owner, preferNear: false)
                     ?? FirstFree(slots);
             }
 
+            slot ??= FirstFree(slots);
             if (slot is null)
             {
                 break;
@@ -192,6 +204,12 @@ public static class AssignmentBuilder
             return;
         }
 
+        var servers = geometry.ServersOf(slot.Segment);
+        if (servers.Count == 0)
+        {
+            return;
+        }
+
         int recommended = Math.Max(1, ShaftCountCalculator.Recommend(
             article.InflowCratesPerHour,
             article.CratesPerPallet,
@@ -201,25 +219,26 @@ public static class AssignmentBuilder
         double pulls = article.InflowCratesPerHour <= 0
             ? 0
             : (article.InflowCratesPerHour / article.PullTriggerCrates) / recommended;
-        var zone = geometry.ZoneOfSegment(slot.Segment);
-        var shuttle1 = project.Shuttle(ShuttleId.Shuttle1);
-        var shuttle2 = project.Shuttle(ShuttleId.Shuttle2);
-        double to1 = Hop(geometry, shuttle1, slot);
-        double to2 = Hop(geometry, shuttle2, slot);
+        double hop = servers.Min(id => Hop(geometry, project.Shuttle(id), slot));
         double transfer = Math.Max(0, project.Layout.TransferDurationSeconds);
-        if (zone == ZoneKind.Shared)
+        double hours = pulls * (hop + transfer) / 3600.0;
+        if (servers.Count == 1)
         {
-            double hop = Math.Min(to1, to2);
-            double hours = pulls * (hop + transfer) / 3600.0;
-            load[ShuttleId.Shuttle1] += hours / 2.0;
-            load[ShuttleId.Shuttle2] += hours / 2.0;
+            Add(load, servers[0], hours);
+            return;
         }
-        else
+
+        double share = hours / servers.Count;
+        foreach (var id in servers)
         {
-            var owner = zone == ZoneKind.Shuttle1Only ? ShuttleId.Shuttle1 : ShuttleId.Shuttle2;
-            double hop = owner == ShuttleId.Shuttle1 ? to1 : to2;
-            load[owner] += pulls * (hop + transfer) / 3600.0;
+            Add(load, id, share);
         }
+    }
+
+    private static void Add(Dictionary<ShuttleId, double> load, ShuttleId id, double hours)
+    {
+        load.TryGetValue(id, out double current);
+        load[id] = current + hours;
     }
 
     private static double Hop(LayoutGeometry geometry, ShuttleSettings shuttle, ShaftAssignment slot)
@@ -231,14 +250,24 @@ public static class AssignmentBuilder
             shuttle);
     }
 
-    private static ShaftAssignment? Nearest(
+    private static ShaftAssignment? NearestExclusive(
+        DistributorProject project,
         LayoutGeometry geometry,
         List<ShaftAssignment> slots,
-        ZoneKind zone,
-        ShuttleSettings shuttle,
+        ShuttleId owner,
         bool preferNear)
     {
-        var free = slots.Where(slot => slot.ArticleId is null && geometry.ZoneOfSegment(slot.Segment) == zone);
+        var shuttle = project.Shuttles.FirstOrDefault(candidate => candidate.Id == owner);
+        if (shuttle is null)
+        {
+            return null;
+        }
+
+        var free = slots.Where(slot =>
+            slot.ArticleId is null
+            && slot.Segment >= 1
+            && slot.Segment <= geometry.SegmentCount
+            && geometry.ExclusiveOwner(slot.Segment) == owner);
         return preferNear
             ? free.OrderBy(slot => Hop(geometry, shuttle, slot)).ThenBy(slot => slot.Level).ThenBy(slot => slot.Shaft).FirstOrDefault()
             : free.OrderByDescending(slot => Hop(geometry, shuttle, slot)).ThenBy(slot => slot.Level).FirstOrDefault();
@@ -246,15 +275,19 @@ public static class AssignmentBuilder
 
     private static ShaftAssignment? NearestCenter(LayoutGeometry geometry, List<ShaftAssignment> slots)
     {
-        var span = geometry.ZoneSpan(ZoneKind.Shared);
-        if (span.End <= span.Start && geometry.ExclusiveSegmentCount == geometry.SegmentCount)
+        var span = geometry.PrimarySharedSpan();
+        if (span.End <= span.Start)
         {
             return null;
         }
 
         double center = (span.Start + span.End) / 2.0;
         return slots
-            .Where(slot => slot.ArticleId is null && geometry.ZoneOfSegment(slot.Segment) == ZoneKind.Shared)
+            .Where(slot =>
+                slot.ArticleId is null
+                && slot.Segment >= 1
+                && slot.Segment <= geometry.SegmentCount
+                && geometry.IsShared(slot.Segment))
             .OrderBy(slot => Math.Abs(geometry.ShaftX(slot.Segment, slot.Shaft) - center))
             .ThenBy(slot => slot.Level)
             .ThenBy(slot => slot.Shaft)

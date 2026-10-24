@@ -104,7 +104,7 @@ public sealed class ViewModelTests
     {
         var shell = Harness.CreateShell();
         shell.Layout.SegmentCount = 4;
-        shell.Layout.Shuttle1.HorizontalSpeed = 0;
+        shell.Layout.Shuttles[0].HorizontalSpeed = 0;
         shell.Layout.ApplyCommand.Execute(null);
         Assert.Equal(12, shell.Project.Layout.SegmentCount);
         Assert.Equal(UiText.Validation_Positive, shell.Layout.Status);

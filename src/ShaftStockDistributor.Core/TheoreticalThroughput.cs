@@ -16,7 +16,7 @@ public static class TheoreticalThroughput
             return 0;
         }
 
-        var geometry = new LayoutGeometry(project.Layout);
+        var geometry = LayoutGeometry.For(project);
         if (geometry.ShaftCount == 0)
         {
             return 0;
@@ -73,8 +73,7 @@ public static class TheoreticalThroughput
         var points = new List<(double X, double Y)>();
         for (int segment = 1; segment <= geometry.SegmentCount; segment++)
         {
-            var zone = geometry.ZoneOfSegment(segment);
-            if (!geometry.ShuttleCanServe(shuttle.Id, zone))
+            if (!geometry.ShuttleCanServe(shuttle.Id, segment))
             {
                 continue;
             }

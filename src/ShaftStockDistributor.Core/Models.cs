@@ -87,6 +87,12 @@ public sealed class ShuttleSettings
 
     /// <summary>Stored for the customer. Travel back to this pose is not applied until the real pose is known.</summary>
     public ShuttlePose Handover { get; set; } = new();
+
+    /// <summary>First segment this shuttle may serve, inclusive. Zero means the range has not been set yet.</summary>
+    public int SegmentFrom { get; set; }
+
+    /// <summary>Last segment this shuttle may serve, inclusive. Zero means the range has not been set yet.</summary>
+    public int SegmentTo { get; set; }
 }
 
 public sealed class LayoutSettings
@@ -208,7 +214,7 @@ public sealed class StudySettings
 
     public bool TreatLostCratesAsSaturation { get; set; } = true;
 
-    /// <summary>Null disables the utilization rule. A value such as 0.95 marks saturation when either shuttle exceeds it.</summary>
+    /// <summary>Null disables the utilization rule. A value such as 0.95 marks saturation when any shuttle exceeds it.</summary>
     public double? UtilizationCeiling { get; set; }
 }
 

@@ -109,7 +109,7 @@ public static class Program
         foreach (var point in result.Means)
         {
             Console.WriteLine(
-                $"{point.Scenario} | {point.Mode} | {point.LoadCratesPerHour:0} crates/h | offered {point.OfferedPalletsPerHour:0.0} | achieved {point.AchievedPalletsPerHour:0.0} | util {point.Utilization1:P0}/{point.Utilization2:P0} | lost {point.LostCrates}");
+                $"{point.Scenario} | {point.Mode} | {point.LoadCratesPerHour:0} crates/h | offered {point.OfferedPalletsPerHour:0.0} | achieved {point.AchievedPalletsPerHour:0.0} | util {FormatUtil(point)} | lost {point.LostCrates}");
         }
 
         foreach (var saturation in result.Saturations)
@@ -131,8 +131,16 @@ public static class Program
     private static void PrintResult(SimulationResult result)
     {
         Console.WriteLine($"Pallets {result.Pallets:0.00} ({result.PalletsPerHour:0.00} per hour), offered {result.OfferedPalletsPerHour:0.00} per hour");
-        Console.WriteLine($"Pulls shuttle 1 {result.PullsShuttle1}, shuttle 2 {result.PullsShuttle2}");
-        Console.WriteLine($"Utilization shuttle 1 {result.Utilization1:P1}, shuttle 2 {result.Utilization2:P1}");
+        if (result.Shuttles.Count == 0)
+        {
+            Console.WriteLine($"Pulls shuttle 1 {result.PullsShuttle1}, shuttle 2 {result.PullsShuttle2}");
+            Console.WriteLine($"Utilization shuttle 1 {result.Utilization1:P1}, shuttle 2 {result.Utilization2:P1}");
+        }
+        else
+        {
+            Console.WriteLine("Pulls " + string.Join(", ", result.Shuttles.Select(shuttle => $"shuttle {shuttle.Id.Number} {shuttle.Pulls}")));
+            Console.WriteLine("Utilization " + string.Join(", ", result.Shuttles.Select(shuttle => $"shuttle {shuttle.Id.Number} {shuttle.Utilization:P1}")));
+        }
         Console.WriteLine($"Pull wait average {result.AveragePullWaitSeconds:0.0} s, max {result.MaxPullWaitSeconds:0.0} s");
         Console.WriteLine($"Blocked {result.BlockedSeconds:0.0} s, lost crates {result.LostCrates}, overflowing shafts {result.OverflowingShafts}");
         Console.WriteLine($"Controller jobs {result.ControllerPullJobs}, hardware jobs {result.HardwarePullJobs}");
@@ -159,6 +167,16 @@ public static class Program
         double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value)
             ? value
             : fallback;
+
+    private static string FormatUtil(StudyPoint point)
+    {
+        if (point.UtilizationByShuttle.Count == 0)
+        {
+            return $"{point.Utilization1:P0}/{point.Utilization2:P0}";
+        }
+
+        return string.Join("/", point.UtilizationByShuttle.Select(value => value.ToString("P0")));
+    }
 
     private static int Unknown(string command)
     {

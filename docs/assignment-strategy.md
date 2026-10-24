@@ -77,6 +77,38 @@ Clustering every shaft of one article together shortens later travel between its
 
 The naive baseline ignores zones. It fills shafts from the left, in article order, using the same target counts. On the example warehouse that parks the fast movers on shuttle 1. Shuttle 2's planned load drops to about zero.
 
+## How many shuttles, and how wide the overlap is
+
+The aisle can hold from 1 shuttle up to one per segment. Shuttle numbers run left to right. Shuttle *n* cannot pass shuttle *n+1*. Each shuttle has its own speed (default 0.3 m/s on both axes) and its own home.
+
+A shuttle serves an inclusive segment range. Where two neighbours both include a segment, that segment is shared: either of them may pull it, and the interlock keeps them apart. Every segment must belong to at least one range. The checker rejects a gap, a range that starts or ends outside the layout, a range that crosses the neighbour (the right-hand shuttle would have to pass), duplicate shuttle numbers, and homes that are out of order or closer than the safety distance.
+
+**Two-shuttle thirds** is the preset that matches the table above. On 12 segments shuttle 1 serves 1–8 and shuttle 2 serves 5–12, homes at the two ends. Costs, zones, and the 55.1 pallets/h sample stay on that preset.
+
+**Even split** is the default when you add or remove shuttles. Exclusive slices are as equal as the segment count allows. Each shuttle except the last then extends `overlap` segments into the next slice.
+
+```
+overlap = max(1, segmentCount / (3 × shuttleCount))    when there is more than one shuttle
+```
+
+On the 12-segment example that overlap is 1.
+
+| Shuttles | Ranges | Shared segments |
+| --- | --- | --- |
+| 2 (thirds preset, not the even split) | 1–8 and 5–12 | 5–8 |
+| 3 | 1–5, 5–9, 9–12 | 5 and 9 |
+| 4 | 1–4, 4–7, 7–10, 10–12 | 4, 7, and 10 |
+
+Homes for an even split are spaced from X = 0 to the far end of the aisle, so the outer shuttles still sit on the ends.
+
+What that does to A, B, and C:
+
+- **More shuttles** cut the aisle into more exclusive pockets. A movers are handed to whichever pocket's shuttle has less planned load, on the free shaft closest to that home. The same A article can sit on several homes, so more than two shuttles can pull it in parallel. Each pocket is shorter, which is why the shaft-to-shaft upper bound climbs (about 153 pallets/h for the pair, 334 for three shuttles, 507 for four, on the example crate mix). Each pocket also holds fewer shafts, so a fast mover spills into the overlap sooner.
+- **A wider overlap** (the thirds preset shares four segments; the even split shares one per boundary) gives B and C a larger place to sit, and it gives an A article that needs three or more shafts a shared overflow shaft either neighbour can reach. It also means more pulls reserve a stretch the neighbour may need, so blocked time goes up before the travel saving does.
+- **A narrower overlap** keeps almost every shaft exclusive. A movers stay on one home shuttle and rarely wait. B and C have to use the edge of an exclusive zone, farther from the middle, once the single shared segment is full.
+
+On the example 1800 crates/h (offered 52.8 pallets/h, seed 1, 2.5 h with the first hour excluded, 400 optimizer iterations) the thirds pair achieves **55.1** pallets/h. Three shuttles achieve **50.2** and four achieve **51.3**. The load is already inside what two shuttles can clear, so the extra shuttles show up as a higher ceiling and lower utilization (about 32% / 32% for the pair, down to 15% / 6% / 4% / 9% for four), not as more pallets in this hour. Use another shuttle when the study says a shuttle is the thing that saturates, not when the offered line is already the limit.
+
 ## Travel, home, and handover
 
 Each shuttle has its own horizontal speed, vertical speed, horizontal acceleration, and vertical acceleration. Defaults are 0.3 m/s and 0.2 m/s² on both axes. Zero acceleration is a constant speed. A positive acceleration uses a triangular profile when the hop is too short to reach top speed, and a trapezoid otherwise.
@@ -100,7 +132,7 @@ The cost is a weighted sum:
 | Term | Meaning | Default weight |
 | --- | --- | --- |
 | Travel hours | Planned pulls times (hop from home + transfer), shared shafts charged to the nearer shuttle | 1.0 |
-| Imbalance | `abs(load1 - load2) / (load1 + load2)` | 1.2 |
+| Imbalance | `(max load − min load) / sum of loads`. With two shuttles that is `abs(load1 - load2) / (load1 + load2)` | 1.2 |
 | Middle traffic | Fraction of planned pulls that sit in the shared zone | 0.8 |
 | Penalty | Missing shafts, an article that can never pull, a shaft outside the layout | 4.0 |
 
@@ -116,9 +148,9 @@ The simulation and the operation view share one controller.
 
 1. A crate goes to the least-full assigned shaft that is not in transfer and still has room. Otherwise it is lost, and full shafts of that article are marked overflowing during the measured window.
 2. Reaching the trigger enqueues a pull. Priority is near-full or overflowing first, then A before B before C, then age.
-3. An exclusive shaft is offered only to its shuttle. A shared shaft is offered to the idle shuttle with less busy time, with a preference that flips after each shared assignment so one shuttle cannot camp in the middle.
-4. While one shuttle is blocked, the other does not start a new shared pull. If it is sitting inside the shared span, it yields home so the blocked shuttle can leave.
-5. A moving shuttle reserves the X span it is sweeping, plus the safety distance (default 1.5 m). An idle shuttle reserves a point. A reservation that would leave the shuttles closer than the safety distance is rejected. Sitting exactly at the safety distance is allowed.
+3. An exclusive shaft is offered only to its shuttle. A shared shaft is offered to the idle shuttle that may serve it and has less busy time. After a shared pull the preference moves to the other server of that segment, so one shuttle cannot camp in the overlap.
+4. While a neighbour is blocked, a shuttle does not start a new pull in a shared segment that neighbour also serves. If it is sitting in that overlap, it moves aside. The aside target is its home when home is outside the overlap, otherwise the middle of its nearest exclusive segment. The path has to stay clear of the neighbour.
+5. A moving shuttle reserves the X span it is sweeping, plus the safety distance (default 1.5 m). An idle shuttle reserves a point. A reservation that would leave two shuttles closer than the safety distance, or that would put a higher number to the left of a lower number, is rejected. Sitting exactly at the safety distance is allowed. Shuttles cannot pass.
 
 Blocked time is counted separately from utilization. Utilization is travel plus transfer, divided by the measured window. Pull wait is the time from the trigger until transfer starts, so the transfer itself is not counted as waiting.
 

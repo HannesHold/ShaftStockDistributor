@@ -20,8 +20,9 @@ public readonly record struct Interval(double Start, double End)
 }
 
 /// <summary>
-/// Keeps the two shuttles at least the safety distance apart along the aisle.
+/// Keeps every shuttle at least the safety distance apart along the aisle.
 /// Level does not matter: they share one rear aisle and cannot pass.
+/// Lower shuttle numbers stay to the left of higher numbers.
 /// </summary>
 public sealed class ZoneInterlock
 {
@@ -45,7 +46,7 @@ public sealed class ZoneInterlock
                 continue;
             }
 
-            if (TooClose(pair.Value, candidate, SafetyDistanceMeters))
+            if (TooClose(pair.Value, candidate, SafetyDistanceMeters) || Passes(shuttle, candidate, pair.Key, pair.Value))
             {
                 return true;
             }
@@ -82,11 +83,26 @@ public sealed class ZoneInterlock
 
     private bool Violates()
     {
-        if (!_held.TryGetValue(ShuttleId.Shuttle1, out var first) || !_held.TryGetValue(ShuttleId.Shuttle2, out var second))
+        var ordered = _held.OrderBy(pair => pair.Key).ToArray();
+        for (int left = 0; left < ordered.Length; left++)
         {
-            return false;
+            for (int right = left + 1; right < ordered.Length; right++)
+            {
+                if (TooClose(ordered[left].Value, ordered[right].Value, SafetyDistanceMeters)
+                    || Passes(ordered[left].Key, ordered[left].Value, ordered[right].Key, ordered[right].Value))
+                {
+                    return true;
+                }
+            }
         }
 
-        return TooClose(first, second, SafetyDistanceMeters);
+        return false;
+    }
+
+    private static bool Passes(ShuttleId first, Interval firstSpan, ShuttleId second, Interval secondSpan)
+    {
+        var left = first.CompareTo(second) <= 0 ? firstSpan : secondSpan;
+        var right = first.CompareTo(second) <= 0 ? secondSpan : firstSpan;
+        return left.Start > right.End + 1e-6;
     }
 }

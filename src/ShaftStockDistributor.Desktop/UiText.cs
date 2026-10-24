@@ -50,6 +50,16 @@ public static class UiText
     public static string Utilization => S();
     public static string Shuttle1 => S();
     public static string Shuttle2 => S();
+    public static string ShuttlesZones => S();
+    public static string ShuttleZoneHint => S();
+    public static string AddShuttle => S();
+    public static string RemoveShuttle => S();
+    public static string EvenSplit => S();
+    public static string TwoShuttlePreset => S();
+    public static string ShuttleLimit => S();
+    public static string ShuttleMinimum => S();
+    public static string EvenSplitApplied => S();
+    public static string ThirdsPresetApplied => S();
     public static string AverageWait => S();
     public static string Blocked => S();
     public static string LostCrates => S();

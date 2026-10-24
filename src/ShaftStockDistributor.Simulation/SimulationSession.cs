@@ -88,8 +88,14 @@ public sealed class SimulationSession
         var pulls = Controller.Shafts
             .Where(shaft => shaft.MeasuredPullCount > 0)
             .ToDictionary(shaft => shaft.Address.ToString(), shaft => shaft.MeasuredPullCount, StringComparer.Ordinal);
-        double util1 = measured <= 1e-9 ? 0 : Controller.BusySecondsAt(ShuttleId.Shuttle1, _now) / measured;
-        double util2 = measured <= 1e-9 ? 0 : Controller.BusySecondsAt(ShuttleId.Shuttle2, _now) / measured;
+        var shuttleKpis = Controller.Shuttles.Select(shuttle => new ShuttleKpi
+        {
+            Id = shuttle.Id,
+            Pulls = shuttle.MeasuredPulls,
+            Utilization = measured <= 1e-9 ? 0 : Controller.BusySecondsAt(shuttle.Id, _now) / measured
+        }).ToList();
+        double Util(ShuttleId id) => shuttleKpis.FirstOrDefault(shuttle => shuttle.Id == id)?.Utilization ?? 0;
+        int Pulls(ShuttleId id) => shuttleKpis.FirstOrDefault(shuttle => shuttle.Id == id)?.Pulls ?? 0;
         return new SimulationResult
         {
             Seed = _options.Seed,
@@ -101,10 +107,11 @@ public sealed class SimulationSession
             SteadyPallets = Controller.SteadyPallets,
             PalletsPerHour = hours <= 1e-12 ? 0 : pallets / hours,
             OfferedPalletsPerHour = InflowAllocator.OfferedPalletsPerHour(Controller.Project.Articles),
-            PullsShuttle1 = Controller.Shuttles.First(shuttle => shuttle.Id == ShuttleId.Shuttle1).MeasuredPulls,
-            PullsShuttle2 = Controller.Shuttles.First(shuttle => shuttle.Id == ShuttleId.Shuttle2).MeasuredPulls,
-            Utilization1 = util1,
-            Utilization2 = util2,
+            PullsShuttle1 = Pulls(ShuttleId.Shuttle1),
+            PullsShuttle2 = Pulls(ShuttleId.Shuttle2),
+            Utilization1 = Util(ShuttleId.Shuttle1),
+            Utilization2 = Util(ShuttleId.Shuttle2),
+            Shuttles = shuttleKpis,
             AveragePullWaitSeconds = Controller.WaitAverage,
             MaxPullWaitSeconds = Controller.WaitMax,
             BlockedSeconds = Controller.BlockedSecondsAt(_now),
@@ -189,7 +196,47 @@ public sealed class SimulationSession
     private WarehouseSnapshot BuildSnapshot(SimulationResult kpis)
     {
         var geometry = Controller.Geometry;
-        var span = geometry.ZoneSpan(ZoneKind.Shared);
+        var sharedSpans = geometry.SharedSpans();
+        var bands = new List<SegmentBand>(geometry.SegmentCount);
+        for (int segment = 1; segment <= geometry.SegmentCount; segment++)
+        {
+            var servers = geometry.ServersOf(segment);
+            bool shared = servers.Count > 1;
+            bands.Add(new SegmentBand
+            {
+                Segment = segment,
+                Zone = servers.Count == 0 ? ZoneKind.Shared : geometry.ZoneOfSegment(segment),
+                Shared = shared,
+                OwnerNumber = servers.Count == 1 ? servers[0].Number : 0,
+                Label = shared
+                    ? servers.Count <= 3 ? string.Join("·", servers.Select(server => server.Number.ToString())) : "S"
+                    : servers.Count == 1 ? servers[0].Number.ToString() : "?"
+            });
+        }
+
+        var sharedRuns = new List<SharedRun>();
+        int? runStart = null;
+        int runEnd = 0;
+        for (int segment = 1; segment <= geometry.SegmentCount; segment++)
+        {
+            if (bands[segment - 1].Shared)
+            {
+                runStart ??= segment;
+                runEnd = segment;
+                continue;
+            }
+
+            if (runStart is int start)
+            {
+                sharedRuns.Add(new SharedRun { FirstSegment = start, LastSegment = runEnd });
+                runStart = null;
+            }
+        }
+
+        if (runStart is int last)
+        {
+            sharedRuns.Add(new SharedRun { FirstSegment = last, LastSegment = runEnd });
+        }
         var shafts = Controller.Shafts.Select(shaft =>
         {
             var article = shaft.ArticleId is null ? null : Controller.Project.FindArticle(shaft.ArticleId);
@@ -226,7 +273,7 @@ public sealed class SimulationSession
         {
             var settings = Controller.Project.Shuttle(shuttle.Id);
             var (x, y) = ShuttleMotion.At(shuttle, settings, _now);
-            bool inShared = span.End > span.Start && x >= span.Start && x <= span.End;
+            bool inShared = geometry.ContainsShared(x);
             return new ShuttleVisual
             {
                 Id = shuttle.Id,
@@ -241,10 +288,11 @@ public sealed class SimulationSession
             };
         }).ToList();
 
-        bool locked = Controller.Shuttles.Any(shuttle =>
+        bool locked = sharedSpans.Count > 0 && Controller.Shuttles.Any(shuttle =>
         {
             var interval = Controller.Interlock.Of(shuttle.Id);
-            return interval is Interval held && held.Hits(span.Start, span.End)
+            return interval is Interval held
+                && sharedSpans.Any(span => held.Hits(span.Start, span.End))
                 && shuttle.Phase is ShuttlePhase.Traveling or ShuttlePhase.Transferring or ShuttlePhase.Blocked;
         });
 
@@ -263,12 +311,7 @@ public sealed class SimulationSession
                 Article = Controller.Project.FindArticle(job.ArticleId)?.Name ?? job.ArticleId,
                 Location = job.Kind == PullKind.Reposition ? "Home" : job.Address.ToString(),
                 State = job.Phase.ToString(),
-                Shuttle = job.Shuttle switch
-                {
-                    ShuttleId.Shuttle1 => "Shuttle 1",
-                    ShuttleId.Shuttle2 => "Shuttle 2",
-                    _ => ""
-                },
+                Shuttle = job.Shuttle is ShuttleId shuttleId ? "Shuttle " + shuttleId.Number.ToString() : "",
                 Crates = crates
             };
         }).ToList();
@@ -301,6 +344,8 @@ public sealed class SimulationSession
             ShaftsPerLevel = geometry.ShaftsPerLevel,
             SharedZoneLocked = locked,
             AnyShuttleBlocked = shuttles.Any(shuttle => shuttle.IsBlocked),
+            Bands = bands,
+            SharedRuns = sharedRuns,
             Shafts = shafts,
             Shuttles = shuttles,
             Jobs = jobs,

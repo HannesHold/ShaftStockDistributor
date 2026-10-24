@@ -34,7 +34,7 @@ public sealed class OperationsController
         AssignmentMode? mode = null)
     {
         _project = project;
-        _geometry = new LayoutGeometry(project.Layout);
+        _geometry = LayoutGeometry.For(project);
         _hardware = hardware;
         _clock = clock;
         _warmup = Math.Max(0, warmupSeconds);
@@ -49,11 +49,13 @@ public sealed class OperationsController
         Shafts = new List<ShaftRuntime>(slots.Count);
         foreach (var slot in slots)
         {
-            var zone = _geometry.ZoneOfSegment(slot.Segment);
+            var servers = _geometry.ServersOf(slot.Segment);
+            var zone = servers.Count == 0 ? ZoneKind.Shared : _geometry.ZoneOfSegment(slot.Segment);
             var shaft = new ShaftRuntime
             {
                 Address = slot.Address,
                 Zone = zone,
+                Servers = servers,
                 X = _geometry.ShaftX(slot.Segment, slot.Shaft),
                 Y = _geometry.LevelY(slot.Level),
                 ArticleId = slot.ArticleId,
@@ -91,6 +93,13 @@ public sealed class OperationsController
         foreach (var shuttle in Shuttles)
         {
             _interlock.Hold(shuttle.Id, Interval.Point(shuttle.X));
+        }
+
+        if (Shuttles.Count > 0)
+        {
+            _preferred = Shuttles.Any(shuttle => shuttle.Id == ShuttleId.Shuttle1)
+                ? ShuttleId.Shuttle1
+                : Shuttles[0].Id;
         }
 
         hardware.JobCompleted += OnHardwareCompleted;
@@ -259,19 +268,26 @@ public sealed class OperationsController
                 continue;
             }
 
-            bool otherBlocked = Other(shuttle).Phase == ShuttlePhase.Blocked;
-            if (otherBlocked && InsideShared(shuttle.X) && TryYield(shuttle, now))
+            if (SittingOnBlockedNeighbor(shuttle) && TryYield(shuttle, now))
             {
                 continue;
             }
 
-            var job = SelectJob(shuttle, now, skipShared: otherBlocked);
+            var job = SelectJob(shuttle, now);
             if (job is not null)
             {
                 StartPull(shuttle, job, now);
-                if (_byAddress.TryGetValue(job.Address, out var shaft) && shaft.Zone == ZoneKind.Shared)
+                if (_byAddress.TryGetValue(job.Address, out var shaft) && shaft.Servers.Count > 1)
                 {
-                    _preferred = Other(shuttle).Id;
+                    var partner = shaft.Servers
+                        .Where(id => id != shuttle.Id)
+                        .OrderBy(id => Shuttle(id).BusySeconds)
+                        .ThenBy(id => id)
+                        .FirstOrDefault();
+                    if (partner.Number > 0)
+                    {
+                        _preferred = partner;
+                    }
                 }
 
                 continue;
@@ -491,7 +507,7 @@ public sealed class OperationsController
         Dispatch(now);
     }
 
-    private PullJob? SelectJob(ShuttleRuntime shuttle, double now, bool skipShared)
+    private PullJob? SelectJob(ShuttleRuntime shuttle, double now)
     {
         foreach (var job in Pending(now))
         {
@@ -500,12 +516,12 @@ public sealed class OperationsController
                 continue;
             }
 
-            if (!_geometry.ShuttleCanServe(shuttle.Id, shaft.Zone))
+            if (!shaft.Servers.Contains(shuttle.Id))
             {
                 continue;
             }
 
-            if (skipShared && shaft.Zone == ZoneKind.Shared)
+            if (SharedBlockedByNeighbor(shuttle, shaft))
             {
                 continue;
             }
@@ -526,7 +542,7 @@ public sealed class OperationsController
         bool any = false;
         foreach (var job in _jobs.Where(job => job.Phase == JobPhase.Pending))
         {
-            if (!_byAddress.TryGetValue(job.Address, out var shaft) || !_geometry.ShuttleCanServe(shuttle.Id, shaft.Zone))
+            if (!_byAddress.TryGetValue(job.Address, out var shaft) || !shaft.Servers.Contains(shuttle.Id))
             {
                 continue;
             }
@@ -577,30 +593,31 @@ public sealed class OperationsController
     private bool TryYield(ShuttleRuntime shuttle, double now)
     {
         var settings = _project.Shuttle(shuttle.Id);
-        if (!InsideShared(shuttle.X) || Math.Abs(shuttle.X - settings.Home.XMeters) < 0.05)
+        if (!_geometry.ContainsShared(shuttle.X) || !NeighborNeedsYield(shuttle))
         {
             return false;
         }
 
-        var other = Other(shuttle);
-        bool otherNeedsShared = _jobs.Any(job =>
-            job.Phase == JobPhase.Pending
-            && _byAddress.TryGetValue(job.Address, out var shaft)
-            && shaft.Zone == ZoneKind.Shared
-            && _geometry.ShuttleCanServe(other.Id, shaft.Zone)
-            && _interlock.Conflicts(other.Id, Interval.Span(other.X, shaft.X)));
-        if (!otherNeedsShared && other.Phase != ShuttlePhase.Blocked)
+        double targetX = AsideTargetX(shuttle, settings);
+        if (Math.Abs(shuttle.X - targetX) < 0.05)
         {
             return false;
         }
 
-        double homeY = _geometry.LevelY(Math.Clamp(settings.Home.Level, 1, Math.Max(1, _geometry.Levels)));
-        var sweep = Interval.Span(shuttle.X, settings.Home.XMeters);
-        if (_interlock.Conflicts(shuttle.Id, sweep))
+        var sweep = Interval.Span(shuttle.X, targetX);
+        if (_interlock.Conflicts(shuttle.Id, sweep) && !TryRetreat(shuttle, ref targetX))
         {
             return false;
         }
 
+        sweep = Interval.Span(shuttle.X, targetX);
+        if (_interlock.Conflicts(shuttle.Id, sweep) || Math.Abs(shuttle.X - targetX) < 0.05)
+        {
+            return false;
+        }
+
+        int level = Math.Clamp(settings.Home.Level, 1, Math.Max(1, _geometry.Levels));
+        double targetY = _geometry.LevelY(level);
         var job = new PullJob
         {
             Id = $"Y{++_sequence}",
@@ -608,19 +625,19 @@ public sealed class OperationsController
             Phase = JobPhase.Traveling,
             Shuttle = shuttle.Id,
             Created = now,
-            ToX = settings.Home.XMeters,
-            ToY = homeY,
-            ToLevel = settings.Home.Level
+            ToX = targetX,
+            ToY = targetY,
+            ToLevel = level
         };
         _jobs.Add(job);
         ClearBlocked(shuttle, now);
         _interlock.Hold(shuttle.Id, sweep);
-        double travel = Travel(shuttle, settings.Home.XMeters, homeY);
+        double travel = Travel(shuttle, targetX, targetY);
         shuttle.Phase = ShuttlePhase.Traveling;
         shuttle.JobId = job.Id;
-        ArmMotion(shuttle, now, settings.Home.XMeters, homeY);
+        ArmMotion(shuttle, now, targetX, targetY);
         PullJobsSent++;
-        Log(now, $"{Name(shuttle.Id)} is leaving the shared zone so the other shuttle can enter.");
+        Log(now, $"{Name(shuttle.Id)} is leaving the shared zone so a neighbouring shuttle can enter.");
         _hardware.SendPullJob(new PullJobCommand
         {
             JobId = job.Id,
@@ -630,9 +647,9 @@ public sealed class OperationsController
             TransferSeconds = 0,
             FromX = shuttle.MotionFromX,
             FromY = shuttle.MotionFromY,
-            ToX = settings.Home.XMeters,
-            ToY = homeY,
-            ToLevel = settings.Home.Level
+            ToX = targetX,
+            ToY = targetY,
+            ToLevel = level
         });
         return true;
     }
@@ -787,10 +804,139 @@ public sealed class OperationsController
         return shuttle.MotionStart;
     }
 
-    private bool InsideShared(double x)
+    private bool SittingOnBlockedNeighbor(ShuttleRuntime shuttle)
     {
-        var span = _geometry.ZoneSpan(ZoneKind.Shared);
-        return span.End > span.Start && x >= span.Start && x <= span.End;
+        if (!_geometry.ContainsShared(shuttle.X))
+        {
+            return false;
+        }
+
+        int segment = _geometry.SegmentAt(shuttle.X);
+        foreach (var neighbor in Neighbors(shuttle))
+        {
+            if (neighbor.Phase != ShuttlePhase.Blocked)
+            {
+                continue;
+            }
+
+            if (segment < 1 || _geometry.ServersOf(segment).Contains(neighbor.Id))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool SharedBlockedByNeighbor(ShuttleRuntime shuttle, ShaftRuntime shaft)
+    {
+        if (shaft.Servers.Count < 2)
+        {
+            return false;
+        }
+
+        return Neighbors(shuttle).Any(neighbor =>
+            neighbor.Phase == ShuttlePhase.Blocked && shaft.Servers.Contains(neighbor.Id));
+    }
+
+    private bool NeighborNeedsYield(ShuttleRuntime shuttle)
+    {
+        foreach (var other in Neighbors(shuttle))
+        {
+            if (other.Phase == ShuttlePhase.Blocked)
+            {
+                return true;
+            }
+
+            foreach (var job in _jobs)
+            {
+                if (job.Phase != JobPhase.Pending || !_byAddress.TryGetValue(job.Address, out var shaft))
+                {
+                    continue;
+                }
+
+                if (shaft.Servers.Count < 2 || !shaft.Servers.Contains(other.Id))
+                {
+                    continue;
+                }
+
+                if (_interlock.Conflicts(other.Id, Interval.Span(other.X, shaft.X)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private double AsideTargetX(ShuttleRuntime shuttle, ShuttleSettings settings)
+    {
+        if (!_geometry.ContainsShared(settings.Home.XMeters))
+        {
+            return settings.Home.XMeters;
+        }
+
+        var exclusive = _geometry.ExclusiveSegments(shuttle.Id);
+        if (exclusive.Count == 0)
+        {
+            return settings.Home.XMeters;
+        }
+
+        int best = exclusive
+            .OrderBy(segment => Math.Abs(SegmentMid(segment) - settings.Home.XMeters))
+            .First();
+        return SegmentMid(best);
+    }
+
+    private double SegmentMid(int segment)
+    {
+        var span = _geometry.SegmentSpan(segment);
+        return (span.Start + span.End) / 2.0;
+    }
+
+    private bool TryRetreat(ShuttleRuntime shuttle, ref double targetX)
+    {
+        double direction = Math.Sign(targetX - shuttle.X);
+        if (direction == 0)
+        {
+            return false;
+        }
+
+        double limit = targetX;
+        foreach (var neighbor in Neighbors(shuttle))
+        {
+            if (_interlock.Of(neighbor.Id) is not Interval interval)
+            {
+                continue;
+            }
+
+            double safety = _interlock.SafetyDistanceMeters;
+            if (direction < 0)
+            {
+                double stop = interval.End + safety;
+                if (stop > limit)
+                {
+                    limit = stop;
+                }
+            }
+            else
+            {
+                double stop = interval.Start - safety;
+                if (stop < limit)
+                {
+                    limit = stop;
+                }
+            }
+        }
+
+        if (Math.Abs(limit - shuttle.X) < 0.05 || Math.Sign(limit - shuttle.X) != direction)
+        {
+            return false;
+        }
+
+        targetX = limit;
+        return true;
     }
 
     private void MarkBlocked(ShuttleRuntime shuttle, double now)
@@ -798,7 +944,7 @@ public sealed class OperationsController
         if (shuttle.BlockedSince is null)
         {
             shuttle.BlockedSince = now;
-            Log(now, $"{Name(shuttle.Id)} is waiting. The shared zone is reserved by the other shuttle.");
+            Log(now, $"{Name(shuttle.Id)} is waiting. The shared zone is reserved by a neighbouring shuttle.");
         }
 
         shuttle.Phase = ShuttlePhase.Blocked;
@@ -853,10 +999,21 @@ public sealed class OperationsController
 
     private ShuttleRuntime Shuttle(ShuttleId id) => Shuttles.First(shuttle => shuttle.Id == id);
 
-    private ShuttleRuntime Other(ShuttleRuntime shuttle) =>
-        Shuttle(shuttle.Id == ShuttleId.Shuttle1 ? ShuttleId.Shuttle2 : ShuttleId.Shuttle1);
+    private IEnumerable<ShuttleRuntime> Neighbors(ShuttleRuntime shuttle)
+    {
+        int index = Shuttles.FindIndex(candidate => candidate.Id == shuttle.Id);
+        if (index > 0)
+        {
+            yield return Shuttles[index - 1];
+        }
 
-    private static string Name(ShuttleId id) => id == ShuttleId.Shuttle1 ? "Shuttle 1" : "Shuttle 2";
+        if (index >= 0 && index < Shuttles.Count - 1)
+        {
+            yield return Shuttles[index + 1];
+        }
+    }
+
+    private static string Name(ShuttleId id) => "Shuttle " + id.Number.ToString();
 
     private string ArticleName(string? id) =>
         id is not null && _articles.TryGetValue(id, out var article) ? article.Article.Name : id ?? "(empty)";

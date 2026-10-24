@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -7,6 +8,18 @@ namespace ShaftStockDistributor.Desktop.ViewModels;
 
 public partial class ShuttleDraft : ObservableValidator
 {
+    public int Number { get; set; } = 1;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [System.ComponentModel.DataAnnotations.Range(1, 80, ErrorMessageResourceName = nameof(UiText.Validation_Positive), ErrorMessageResourceType = typeof(UiText))]
+    private int _segmentFrom = 1;
+
+    [ObservableProperty]
+    [NotifyDataErrorInfo]
+    [System.ComponentModel.DataAnnotations.Range(1, 80, ErrorMessageResourceName = nameof(UiText.Validation_Positive), ErrorMessageResourceType = typeof(UiText))]
+    private int _segmentTo = 1;
+
     [ObservableProperty]
     [NotifyDataErrorInfo]
     [System.ComponentModel.DataAnnotations.Range(0.01, 20, ErrorMessageResourceName = nameof(UiText.Validation_Positive), ErrorMessageResourceType = typeof(UiText))]
@@ -32,10 +45,15 @@ public partial class ShuttleDraft : ObservableValidator
     [ObservableProperty] private double _handoverX;
     [ObservableProperty] private int _handoverLevel = 1;
 
+    public string Title => "Shuttle " + Number.ToString();
+
     public void Validate() => ValidateAllProperties();
 
     public void Load(ShuttleSettings settings)
     {
+        Number = settings.Id.Number;
+        SegmentFrom = settings.SegmentFrom;
+        SegmentTo = settings.SegmentTo;
         HorizontalSpeed = settings.HorizontalSpeedMetersPerSecond;
         VerticalSpeed = settings.VerticalSpeedMetersPerSecond;
         HorizontalAcceleration = settings.HorizontalAccelerationMetersPerSecondSquared;
@@ -46,17 +64,18 @@ public partial class ShuttleDraft : ObservableValidator
         HandoverLevel = settings.Handover.Level;
     }
 
-    public void Write(ShuttleSettings settings)
+    public ShuttleSettings ToSettings() => new()
     {
-        settings.HorizontalSpeedMetersPerSecond = HorizontalSpeed;
-        settings.VerticalSpeedMetersPerSecond = VerticalSpeed;
-        settings.HorizontalAccelerationMetersPerSecondSquared = HorizontalAcceleration;
-        settings.VerticalAccelerationMetersPerSecondSquared = VerticalAcceleration;
-        settings.Home.XMeters = HomeX;
-        settings.Home.Level = HomeLevel;
-        settings.Handover.XMeters = HandoverX;
-        settings.Handover.Level = HandoverLevel;
-    }
+        Id = new ShuttleId(Number),
+        SegmentFrom = SegmentFrom,
+        SegmentTo = SegmentTo,
+        HorizontalSpeedMetersPerSecond = HorizontalSpeed,
+        VerticalSpeedMetersPerSecond = VerticalSpeed,
+        HorizontalAccelerationMetersPerSecondSquared = HorizontalAcceleration,
+        VerticalAccelerationMetersPerSecondSquared = VerticalAcceleration,
+        Home = new ShuttlePose { XMeters = HomeX, Level = HomeLevel },
+        Handover = new ShuttlePose { XMeters = HandoverX, Level = HandoverLevel }
+    };
 }
 
 public partial class LayoutEditorViewModel : ObservableValidator
@@ -70,9 +89,7 @@ public partial class LayoutEditorViewModel : ObservableValidator
         messenger.Register<ProjectChangedMessage>(this, (_, message) => Load(message.Project));
     }
 
-    public ShuttleDraft Shuttle1 { get; } = new();
-
-    public ShuttleDraft Shuttle2 { get; } = new();
+    public ObservableCollection<ShuttleDraft> Shuttles { get; } = new();
 
     [ObservableProperty]
     [NotifyDataErrorInfo]
@@ -112,9 +129,12 @@ public partial class LayoutEditorViewModel : ObservableValidator
     private void Apply()
     {
         ValidateAllProperties();
-        Shuttle1.Validate();
-        Shuttle2.Validate();
-        if (HasErrors || Shuttle1.HasErrors || Shuttle2.HasErrors || _project is null)
+        foreach (var shuttle in Shuttles)
+        {
+            shuttle.Validate();
+        }
+
+        if (HasErrors || Shuttles.Any(shuttle => shuttle.HasErrors) || _project is null)
         {
             Status = UiText.Validation_Positive;
             return;
@@ -133,12 +153,100 @@ public partial class LayoutEditorViewModel : ObservableValidator
         layout.ShaftClearHeightMeters = ShaftHeight <= 0 ? null : ShaftHeight;
         layout.TransferDurationSeconds = Transfer;
         layout.SafetyDistanceMeters = Safety;
-        ProjectGrid.EnsureDefaultShuttles(_project);
-        Shuttle1.Write(_project.Shuttle(ShuttleId.Shuttle1));
-        Shuttle2.Write(_project.Shuttle(ShuttleId.Shuttle2));
+        _project.Shuttles = Shuttles.Select(row => row.ToSettings()).ToList();
         ProjectGrid.EnsureFullGrid(_project);
-        Status = UiText.PlaybackReset;
+        var errors = ProjectValidator.Validate(_project)
+            .Where(issue => issue.Severity == ValidationSeverity.Error)
+            .ToList();
+        Status = errors.Count == 0 ? UiText.PlaybackReset : errors[0].Message;
         _messenger.Send(new ProjectChangedMessage { Project = _project });
+    }
+
+    [RelayCommand]
+    private void AddShuttle() => Refit(Shuttles.Count + 1, even: true);
+
+    [RelayCommand]
+    private void RemoveShuttle()
+    {
+        if (Shuttles.Count <= 1)
+        {
+            Status = UiText.ShuttleMinimum;
+            return;
+        }
+
+        Refit(Shuttles.Count - 1, even: true);
+    }
+
+    [RelayCommand]
+    private void EvenSplit() => Refit(Math.Max(1, Shuttles.Count), even: true);
+
+    [RelayCommand]
+    private void TwoShuttleThirds()
+    {
+        var probe = DraftProject();
+        ShuttleLayout.ApplyTwoShuttleThirds(probe, resetMotion: true);
+        ReplaceRows(probe.Shuttles);
+        Status = UiText.ThirdsPresetApplied;
+    }
+
+    private void Refit(int count, bool even)
+    {
+        int limit = Math.Max(1, SegmentCount);
+        if (count > limit)
+        {
+            Status = string.Format(System.Globalization.CultureInfo.InvariantCulture, UiText.ShuttleLimit, limit);
+            return;
+        }
+
+        if (count < 1)
+        {
+            Status = UiText.ShuttleMinimum;
+            return;
+        }
+
+        var probe = DraftProject();
+        if (even)
+        {
+            ShuttleLayout.ApplyEvenSplit(probe, count, resetHomes: true);
+        }
+
+        ReplaceRows(probe.Shuttles);
+        Status = string.Format(System.Globalization.CultureInfo.InvariantCulture, UiText.EvenSplitApplied, probe.Shuttles.Count);
+    }
+
+    private DistributorProject DraftProject()
+    {
+        var project = new DistributorProject
+        {
+            Layout = new LayoutSettings
+            {
+                SegmentCount = Math.Max(1, SegmentCount),
+                LevelsPerSegment = Math.Max(1, Levels),
+                ShaftsPerLevel = Math.Max(1, ShaftsPerLevel),
+                ShaftPitchMeters = Pitch <= 0 ? 0.45 : Pitch,
+                LevelHeightMeters = LevelHeight <= 0 ? 0.55 : LevelHeight,
+                SegmentGapMeters = Math.Max(0, SegmentGap),
+                SafetyDistanceMeters = Math.Max(0, Safety),
+                ShaftLengthMeters = ShaftLength <= 0 ? 20 : ShaftLength
+            }
+        };
+        foreach (var row in Shuttles)
+        {
+            project.Shuttles.Add(row.ToSettings());
+        }
+
+        return project;
+    }
+
+    private void ReplaceRows(IEnumerable<ShuttleSettings> shuttles)
+    {
+        Shuttles.Clear();
+        foreach (var shuttle in shuttles.OrderBy(item => item.Id))
+        {
+            var row = new ShuttleDraft();
+            row.Load(shuttle);
+            Shuttles.Add(row);
+        }
     }
 
     private void Load(DistributorProject project)
@@ -157,14 +265,6 @@ public partial class LayoutEditorViewModel : ObservableValidator
         ShaftHeight = layout.ShaftClearHeightMeters ?? 0;
         Transfer = layout.TransferDurationSeconds;
         Safety = layout.SafetyDistanceMeters;
-        if (project.Shuttles.Any(shuttle => shuttle.Id == ShuttleId.Shuttle1))
-        {
-            Shuttle1.Load(project.Shuttle(ShuttleId.Shuttle1));
-        }
-
-        if (project.Shuttles.Any(shuttle => shuttle.Id == ShuttleId.Shuttle2))
-        {
-            Shuttle2.Load(project.Shuttle(ShuttleId.Shuttle2));
-        }
+        ReplaceRows(project.Shuttles);
     }
 }

@@ -96,7 +96,7 @@
         <dg:DataGridTextColumn Header="Load" Binding="{Binding Load}" Width="90" />
         <dg:DataGridTextColumn Header="Offered" Binding="{Binding Offered}" Width="110" />
         <dg:DataGridTextColumn Header="Achieved" Binding="{Binding Achieved}" Width="120" />
-        <dg:DataGridTextColumn Header="Utilization" Binding="{Binding Utilization}" Width="140" />
+        <dg:DataGridTextColumn Header="Utilization" Binding="{Binding Utilization}" Width="220" />
         <dg:DataGridTextColumn Header="Lost" Binding="{Binding Lost}" Width="80" />
         <dg:DataGridTextColumn Header="Blocked" Binding="{Binding Blocked}" Width="110" />
       </dg:DataGrid.Columns>

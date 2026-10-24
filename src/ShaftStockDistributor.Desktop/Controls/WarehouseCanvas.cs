@@ -81,7 +81,6 @@ public sealed class WarehouseCanvas : Control
         double levelGapPx = 4;
         double cellW = (plot.Width - (snapshot.SegmentCount - 1) * segmentGapPx) / (snapshot.SegmentCount * snapshot.ShaftsPerLevel);
         double cellH = (plot.Height - (snapshot.Levels - 1) * levelGapPx) / snapshot.Levels;
-        int exclusive = snapshot.SegmentCount / 3;
         int maxPulls = 1;
         foreach (var shaft in snapshot.Shafts)
         {
@@ -92,17 +91,12 @@ public sealed class WarehouseCanvas : Control
         {
             double x = SegmentX(plot, segment, snapshot.ShaftsPerLevel, cellW, segmentGapPx);
             double width = snapshot.ShaftsPerLevel * cellW;
-            var zone = ZoneOf(segment, snapshot.SegmentCount, exclusive);
+            var info = BandOf(snapshot, segment);
             var band = new Rect(x - 2, plot.Y - 4, width + 4, plot.Height + 8);
-            context.FillRectangle(Brush(ZoneColor(zone)), band);
-            string label = zone switch
-            {
-                ZoneKind.Shuttle1Only => "1",
-                ZoneKind.Shuttle2Only => "2",
-                _ => "S"
-            };
+            context.FillRectangle(Brush(ZoneColor(info)), band);
             DrawLabel(context, segment.ToString(CultureInfo.InvariantCulture), new Point(x, 6), 11, Brush(Color.Parse("#9AABBC")));
-            DrawLabel(context, label, new Point(x + width - 12, 6), 11, Brush(ZoneInk(zone)));
+            string label = string.IsNullOrEmpty(info.Label) ? "?" : info.Label;
+            DrawLabel(context, label, new Point(x + Math.Max(8, width - 8 - label.Length * 7), 6), 11, Brush(ZoneInk(info)));
         }
 
         foreach (var shaft in snapshot.Shafts)
@@ -145,11 +139,21 @@ public sealed class WarehouseCanvas : Control
 
         if (snapshot.SharedZoneLocked)
         {
-            var span = ZonePixelSpan(plot, snapshot, cellW, segmentGapPx, ZoneKind.Shared, exclusive);
-            if (span.Width > 0)
+            bool labeled = false;
+            foreach (var run in SharedRunsOf(snapshot))
             {
+                var span = SegmentPixelSpan(plot, snapshot, cellW, segmentGapPx, run.First, run.Last);
+                if (span.Width <= 0)
+                {
+                    continue;
+                }
+
                 context.FillRectangle(Brush(Color.Parse("#40F0A202")), span);
-                DrawLabel(context, UiText.SharedLock, new Point(span.X + 6, span.Y + 6), 12, Brush(Color.Parse("#F0A202")));
+                if (!labeled)
+                {
+                    DrawLabel(context, UiText.SharedLock, new Point(span.X + 6, span.Y + 6), 12, Brush(Color.Parse("#F0A202")));
+                    labeled = true;
+                }
             }
         }
 
@@ -163,7 +167,7 @@ public sealed class WarehouseCanvas : Control
                 double ty = MetersToY(plot, snapshot, targetY, cellH, levelGapPx);
                 if (Math.Abs(tx - cx) + Math.Abs(ty - cy) > 4)
                 {
-                    Color path = shuttle.Id == ShuttleId.Shuttle1 ? Color.Parse("#4C8DFF") : Color.Parse("#F0A202");
+                    Color path = ShuttleColor(shuttle.Id.Number);
                     context.DrawLine(new Pen(Brush(path), 2), new Point(cx, cy), new Point(tx, ty));
                     context.DrawEllipse(Brush(path), null, new Point(tx, ty), 5, 5);
                 }
@@ -172,7 +176,7 @@ public sealed class WarehouseCanvas : Control
             double w = Math.Clamp(cellW * 3.2, 22, 44);
             double h = Math.Clamp(cellH * 0.55, 16, 28);
             var body = new Rect(cx - w / 2, cy - h / 2, w, h);
-            Color color = shuttle.Id == ShuttleId.Shuttle1 ? Color.Parse("#4C8DFF") : Color.Parse("#F0A202");
+            Color color = ShuttleColor(shuttle.Id.Number);
             context.DrawRectangle(Brush(color), new Pen(Brush(Color.Parse("#F7FBFF")), 1.4), body, 4, 4);
             if (shuttle.IsBlocked)
             {
@@ -180,20 +184,41 @@ public sealed class WarehouseCanvas : Control
                 DrawLabel(context, "WAIT", new Point(body.X, body.Y - 14), 10, Brush(Color.Parse("#E85D75")));
             }
 
-            DrawLabel(context, shuttle.Id == ShuttleId.Shuttle1 ? "1" : "2", new Point(body.X + 5, body.Y + 1), 11, Brushes.White);
+            DrawLabel(context, shuttle.Id.Number.ToString(CultureInfo.InvariantCulture), new Point(body.X + 5, body.Y + 1), 11, Brushes.White);
         }
 
-        DrawZoneLegend(context, bounds, padL);
+        DrawZoneLegend(context, bounds, padL, snapshot);
     }
 
-    private void DrawZoneLegend(DrawingContext context, Rect bounds, double padL)
+    private void DrawZoneLegend(DrawingContext context, Rect bounds, double padL, WarehouseSnapshot snapshot)
     {
-        (string Text, Color Color)[] items =
-        [
-            (UiText.ZoneShuttle1, Color.Parse("#6FA0E8")),
-            (UiText.ZoneShared, Color.Parse("#E0B15A")),
-            (UiText.ZoneShuttle2, Color.Parse("#B79CFF"))
-        ];
+        var items = new List<(string Text, Color Color)>();
+        var seen = new HashSet<int>();
+        foreach (var band in snapshot.Bands)
+        {
+            if (band.Shared || band.OwnerNumber <= 0 || !seen.Add(band.OwnerNumber))
+            {
+                continue;
+            }
+
+            items.Add((band.OwnerNumber.ToString(CultureInfo.InvariantCulture), ShuttleColor(band.OwnerNumber)));
+        }
+
+        if (items.Count == 0)
+        {
+            foreach (var shuttle in snapshot.Shuttles)
+            {
+                if (seen.Add(shuttle.Id.Number))
+                {
+                    items.Add((shuttle.Id.Number.ToString(CultureInfo.InvariantCulture), ShuttleColor(shuttle.Id.Number)));
+                }
+            }
+        }
+
+        if (snapshot.Bands.Any(band => band.Shared) || snapshot.SharedRuns.Count > 0)
+        {
+            items.Add((UiText.ZoneShared, Color.Parse("#E0B15A")));
+        }
         double y = Math.Max(4, bounds.Height - 20);
         double x = padL;
         foreach (var item in items)
@@ -255,34 +280,85 @@ public sealed class WarehouseCanvas : Control
     private static double SegmentX(Rect plot, int segment, int shaftsPerLevel, double cellW, double segmentGapPx) =>
         plot.X + (segment - 1) * (shaftsPerLevel * cellW + segmentGapPx);
 
-    private static ZoneKind ZoneOf(int segment, int segmentCount, int exclusive)
+    private static readonly Color[] ShuttleColors =
+    [
+        Color.Parse("#4C8DFF"),
+        Color.Parse("#F0A202"),
+        Color.Parse("#3DDC97"),
+        Color.Parse("#E85D75"),
+        Color.Parse("#B79CFF"),
+        Color.Parse("#4ECDC4"),
+        Color.Parse("#F7FBFF"),
+        Color.Parse("#C084FC")
+    ];
+
+    private static Color ShuttleColor(int number)
     {
+        int index = Math.Clamp(number, 1, 64) - 1;
+        return ShuttleColors[index % ShuttleColors.Length];
+    }
+
+    private static SegmentBand BandOf(WarehouseSnapshot snapshot, int segment)
+    {
+        var band = snapshot.Bands.FirstOrDefault(item => item.Segment == segment);
+        if (band is not null)
+        {
+            return band;
+        }
+
+        int exclusive = snapshot.SegmentCount / 3;
         if (exclusive <= 0)
         {
-            return ZoneKind.Shared;
+            return new SegmentBand { Segment = segment, Shared = true, Label = "S", Zone = ZoneKind.Shared };
         }
 
         if (segment <= exclusive)
         {
-            return ZoneKind.Shuttle1Only;
+            return new SegmentBand { Segment = segment, OwnerNumber = 1, Label = "1", Zone = ZoneKind.Shuttle1Only };
         }
 
-        return segment > segmentCount - exclusive ? ZoneKind.Shuttle2Only : ZoneKind.Shared;
+        if (segment > snapshot.SegmentCount - exclusive)
+        {
+            return new SegmentBand { Segment = segment, OwnerNumber = 2, Label = "2", Zone = ZoneKind.Shuttle2Only };
+        }
+
+        return new SegmentBand { Segment = segment, Shared = true, Label = "S", Zone = ZoneKind.Shared };
     }
 
-    private static Color ZoneColor(ZoneKind zone) => zone switch
+    private static IReadOnlyList<(int First, int Last)> SharedRunsOf(WarehouseSnapshot snapshot)
     {
-        ZoneKind.Shuttle1Only => Color.Parse("#14283C"),
-        ZoneKind.Shuttle2Only => Color.Parse("#241C38"),
-        _ => Color.Parse("#2A2618")
-    };
+        if (snapshot.SharedRuns.Count > 0)
+        {
+            return snapshot.SharedRuns.Select(run => (run.FirstSegment, run.LastSegment)).ToArray();
+        }
 
-    private static Color ZoneInk(ZoneKind zone) => zone switch
+        int exclusive = snapshot.SegmentCount / 3;
+        if (exclusive <= 0)
+        {
+            return [(1, snapshot.SegmentCount)];
+        }
+
+        int first = exclusive + 1;
+        int last = snapshot.SegmentCount - exclusive;
+        return first <= last ? [(first, last)] : [];
+    }
+
+    private static Color ZoneColor(SegmentBand band)
     {
-        ZoneKind.Shuttle1Only => Color.Parse("#6FA0E8"),
-        ZoneKind.Shuttle2Only => Color.Parse("#B79CFF"),
-        _ => Color.Parse("#E0B15A")
-    };
+        if (band.Shared || band.OwnerNumber <= 0)
+        {
+            return Color.Parse("#2A2618");
+        }
+
+        var ink = ShuttleColor(band.OwnerNumber);
+        return Color.FromRgb(
+            (byte)(ink.R * 0.16 + 14),
+            (byte)(ink.G * 0.16 + 18),
+            (byte)(ink.B * 0.16 + 28));
+    }
+
+    private static Color ZoneInk(SegmentBand band) =>
+        band.Shared || band.OwnerNumber <= 0 ? Color.Parse("#E0B15A") : ShuttleColor(band.OwnerNumber);
 
     private static Color Heat(int pulls, int max)
     {
@@ -338,26 +414,9 @@ public sealed class WarehouseCanvas : Control
         return bottom + (top - bottom) * t;
     }
 
-    private Rect ZonePixelSpan(Rect plot, WarehouseSnapshot snapshot, double cellW, double segmentGapPx, ZoneKind zone, int exclusive)
+    private static Rect SegmentPixelSpan(Rect plot, WarehouseSnapshot snapshot, double cellW, double segmentGapPx, int first, int last)
     {
-        if (exclusive <= 0)
-        {
-            return new Rect(plot.X, plot.Y, plot.Width, plot.Height);
-        }
-
-        int first = zone switch
-        {
-            ZoneKind.Shuttle1Only => 1,
-            ZoneKind.Shuttle2Only => snapshot.SegmentCount - exclusive + 1,
-            _ => exclusive + 1
-        };
-        int last = zone switch
-        {
-            ZoneKind.Shuttle1Only => exclusive,
-            ZoneKind.Shuttle2Only => snapshot.SegmentCount,
-            _ => snapshot.SegmentCount - exclusive
-        };
-        if (first > last)
+        if (first < 1 || last < first || last > snapshot.SegmentCount)
         {
             return default;
         }

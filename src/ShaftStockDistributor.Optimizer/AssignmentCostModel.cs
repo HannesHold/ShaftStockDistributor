@@ -5,16 +5,22 @@ namespace ShaftStockDistributor.Optimizer;
 /// <summary>
 /// Planning cost. Travel is estimated from each shuttle's home, because the real handover pose is still unknown.
 /// Axes move together, so a hop takes the longer of the two axis times.
+/// A shared shaft is charged to the nearest shuttle that may serve it. With two shuttles that is the old rule,
+/// and imbalance is still <c>(max load - min load) / sum</c>, which is <c>|load1 - load2| / (load1 + load2)</c>.
 /// </summary>
 public static class AssignmentCostModel
 {
     public static CostBreakdown Evaluate(DistributorProject project, IReadOnlyList<ShaftAssignment> assignments)
     {
-        var geometry = new LayoutGeometry(project.Layout);
+        var geometry = LayoutGeometry.For(project);
         var weights = project.Optimizer;
-        var shuttle1 = project.Shuttles.First(s => s.Id == ShuttleId.Shuttle1);
-        var shuttle2 = project.Shuttles.First(s => s.Id == ShuttleId.Shuttle2);
         double transfer = Math.Max(0, project.Layout.TransferDurationSeconds);
+        var shuttles = project.Shuttles.OrderBy(shuttle => shuttle.Id).ToList();
+        var load = new Dictionary<ShuttleId, double>();
+        foreach (var shuttle in shuttles)
+        {
+            load.TryAdd(shuttle.Id, 0);
+        }
 
         var byArticle = assignments
             .Where(slot => !string.IsNullOrEmpty(slot.ArticleId))
@@ -22,8 +28,6 @@ public static class AssignmentCostModel
             .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
 
         double travelHours = 0;
-        double load1 = 0;
-        double load2 = 0;
         double middlePulls = 0;
         double totalPulls = 0;
         double penalty = 0;
@@ -65,22 +69,29 @@ public static class AssignmentCostModel
                     continue;
                 }
 
-                var zone = geometry.ZoneOfSegment(slot.Segment);
-                double to1 = Hop(geometry, shuttle1, slot);
-                double to2 = Hop(geometry, shuttle2, slot);
-                double hop;
-                switch (zone)
+                var servers = geometry.ServersOf(slot.Segment);
+                if (servers.Count == 0)
                 {
-                    case ZoneKind.Shuttle1Only:
-                        hop = to1;
-                        break;
-                    case ZoneKind.Shuttle2Only:
-                        hop = to2;
-                        break;
-                    default:
-                        hop = Math.Min(to1, to2);
-                        middlePulls += pullsPerShaft;
-                        break;
+                    penalty += 5;
+                    continue;
+                }
+
+                ShuttleId nearest = servers[0];
+                double hop = double.PositiveInfinity;
+                foreach (var id in servers.OrderBy(id => id))
+                {
+                    var shuttle = shuttles.FirstOrDefault(candidate => candidate.Id == id);
+                    if (shuttle is null)
+                    {
+                        continue;
+                    }
+
+                    double candidate = Hop(geometry, shuttle, slot);
+                    if (candidate < hop)
+                    {
+                        hop = candidate;
+                        nearest = id;
+                    }
                 }
 
                 if (double.IsInfinity(hop))
@@ -89,37 +100,30 @@ public static class AssignmentCostModel
                     continue;
                 }
 
+                if (servers.Count > 1)
+                {
+                    middlePulls += pullsPerShaft;
+                }
+
                 double hours = pullsPerShaft * (hop + transfer) / 3600.0;
                 travelHours += hours;
                 totalPulls += pullsPerShaft;
-                if (zone == ZoneKind.Shared)
-                {
-                    if (to1 <= to2)
-                    {
-                        load1 += hours;
-                    }
-                    else
-                    {
-                        load2 += hours;
-                    }
-                }
-                else if (zone == ZoneKind.Shuttle1Only)
-                {
-                    load1 += hours;
-                }
-                else
-                {
-                    load2 += hours;
-                }
+                load.TryGetValue(nearest, out double current);
+                load[nearest] = current + hours;
             }
         }
 
-        double imbalance = Math.Abs(load1 - load2) / Math.Max(load1 + load2, 1e-6);
+        double sum = load.Values.Sum();
+        double max = load.Count == 0 ? 0 : load.Values.Max();
+        double min = load.Count == 0 ? 0 : load.Values.Min();
+        double imbalance = (max - min) / Math.Max(sum, 1e-6);
         double middle = totalPulls <= 1e-9 ? 0 : middlePulls / totalPulls;
         double total = weights.TravelWeight * travelHours
             + weights.ImbalanceWeight * imbalance
             + weights.MiddleTrafficWeight * middle
             + weights.PenaltyWeight * penalty;
+        load.TryGetValue(ShuttleId.Shuttle1, out double load1);
+        load.TryGetValue(ShuttleId.Shuttle2, out double load2);
 
         return new CostBreakdown
         {
@@ -129,7 +133,8 @@ public static class AssignmentCostModel
             MiddleTraffic = middle,
             Penalty = penalty,
             Shuttle1LoadHours = load1,
-            Shuttle2LoadHours = load2
+            Shuttle2LoadHours = load2,
+            LoadHours = load
         };
     }
 

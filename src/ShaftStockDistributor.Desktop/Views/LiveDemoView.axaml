@@ -56,8 +56,7 @@
         <Border Classes="card" Margin="0,0,6,0" Padding="8,6">
           <StackPanel Spacing="0">
             <TextBlock Text="{x:Static local:UiText.Utilization}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
-            <TextBlock Classes="muted" FontSize="12" Text="{Binding Util1Text, StringFormat='Shuttle 1 {0}'}" TextWrapping="Wrap" />
-            <TextBlock Classes="muted" FontSize="12" Text="{Binding Util2Text, StringFormat='Shuttle 2 {0}'}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding UtilizationText}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
         <Border Classes="card" Padding="8,6">

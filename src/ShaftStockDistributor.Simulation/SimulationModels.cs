@@ -47,6 +47,9 @@ public sealed class SimulationResult
 
     public double Utilization2 { get; init; }
 
+    /// <summary>Pulls and utilization for every shuttle, in aisle order.</summary>
+    public IReadOnlyList<ShuttleKpi> Shuttles { get; init; } = [];
+
     public double AveragePullWaitSeconds { get; init; }
 
     public double MaxPullWaitSeconds { get; init; }
@@ -66,6 +69,35 @@ public sealed class SimulationResult
     public required Dictionary<string, int> LostCratesByArticle { get; init; }
 
     public required Dictionary<string, int> PullsByShaft { get; init; }
+}
+
+public sealed class ShuttleKpi
+{
+    public ShuttleId Id { get; init; }
+
+    public int Pulls { get; init; }
+
+    public double Utilization { get; init; }
+}
+
+public sealed class SegmentBand
+{
+    public int Segment { get; init; }
+
+    public ZoneKind Zone { get; init; }
+
+    public bool Shared { get; init; }
+
+    public int OwnerNumber { get; init; }
+
+    public string Label { get; init; } = "";
+}
+
+public sealed class SharedRun
+{
+    public int FirstSegment { get; init; }
+
+    public int LastSegment { get; init; }
 }
 
 public sealed class ShaftVisual
@@ -179,6 +211,10 @@ public sealed class WarehouseSnapshot
     public bool SharedZoneLocked { get; init; }
 
     public bool AnyShuttleBlocked { get; init; }
+
+    public IReadOnlyList<SegmentBand> Bands { get; init; } = [];
+
+    public IReadOnlyList<SharedRun> SharedRuns { get; init; } = [];
 
     public required IReadOnlyList<ShaftVisual> Shafts { get; init; }
 

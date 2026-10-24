@@ -15,6 +15,21 @@ public class InterlockTests
         interlock.Hold(ShuttleId.Shuttle2, Interval.Point(6));
         Assert.True(interlock.ReservationsAreSafe());
     }
+
+    [Fact]
+    public void Four_shuttles_cannot_pass_or_close_inside_the_safety_distance()
+    {
+        var interlock = new ZoneInterlock(1.5);
+        interlock.Hold(new ShuttleId(1), Interval.Point(0));
+        interlock.Hold(new ShuttleId(2), Interval.Point(5));
+        interlock.Hold(new ShuttleId(3), Interval.Point(10));
+        interlock.Hold(new ShuttleId(4), Interval.Point(15));
+        Assert.True(interlock.ReservationsAreSafe());
+        Assert.True(interlock.Conflicts(new ShuttleId(3), Interval.Span(10, 4)));
+        Assert.True(interlock.Conflicts(new ShuttleId(2), Interval.Span(5, 9.2)));
+        Assert.False(interlock.Conflicts(new ShuttleId(2), Interval.Span(5, 8)));
+        Assert.Throws<InvalidOperationException>(() => interlock.Hold(new ShuttleId(4), Interval.Point(1)));
+    }
 }
 
 public class AutomaticAssignmentTests

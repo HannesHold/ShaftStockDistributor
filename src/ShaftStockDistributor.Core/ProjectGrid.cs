@@ -83,23 +83,7 @@ public static class ProjectGrid
         }).ToList();
     }
 
-    public static void EnsureDefaultShuttles(DistributorProject project)
-    {
-        var geometry = new LayoutGeometry(project.Layout);
-        if (project.Shuttles.All(s => s.Id != ShuttleId.Shuttle1))
-        {
-            project.Shuttles.Add(DefaultShuttle(ShuttleId.Shuttle1, 0));
-        }
-
-        if (project.Shuttles.All(s => s.Id != ShuttleId.Shuttle2))
-        {
-            project.Shuttles.Add(DefaultShuttle(ShuttleId.Shuttle2, geometry.TotalLengthMeters));
-        }
-
-        project.Shuttles = project.Shuttles
-            .OrderBy(s => s.Id)
-            .ToList();
-    }
+    public static void EnsureDefaultShuttles(DistributorProject project) => ShuttleLayout.Ensure(project);
 
     public static ShuttleSettings DefaultShuttle(ShuttleId id, double homeX) => new()
     {
@@ -114,12 +98,14 @@ public static class ProjectGrid
 
     public static string ToAssignmentCsv(DistributorProject project)
     {
-        var geometry = new LayoutGeometry(project.Layout);
+        var zoned = LayoutGeometry.For(project);
         var lines = new List<string> { "Segment,Level,Shaft,Zone,ArticleId,ArticleName,Pinned" };
         foreach (var slot in project.Assignments.OrderBy(a => a.Address))
         {
             var article = project.FindArticle(slot.ArticleId);
-            string zone = geometry.SegmentCount == 0 ? "" : geometry.ZoneOfSegment(slot.Segment).ToString();
+            string zone = slot.Segment >= 1 && slot.Segment <= zoned.SegmentCount
+                ? zoned.ZoneLabel(slot.Segment)
+                : "";
             lines.Add(string.Join(',',
                 slot.Segment.ToString(),
                 slot.Level.ToString(),

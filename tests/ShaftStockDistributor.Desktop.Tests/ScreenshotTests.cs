@@ -7,6 +7,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ShaftStockDistributor.Core;
 using ShaftStockDistributor.Desktop;
 using ShaftStockDistributor.Desktop.ViewModels;
 
@@ -91,6 +92,26 @@ public sealed class ScreenshotTests
         Save(window, "article-generator.png", 1280);
         shell.Articles.CancelGenerateCommand.Execute(null);
         Assert.False(shell.Articles.ReplaceConfirmationVisible);
+
+        shell.ShowPageCommand.Execute("Layout");
+        shell.Layout.AddShuttleCommand.Execute(null);
+        shell.Layout.AddShuttleCommand.Execute(null);
+        Assert.Equal(4, shell.Layout.Shuttles.Count);
+        shell.Layout.ApplyCommand.Execute(null);
+        Assert.Equal(4, shell.Project.Shuttles.Count);
+        Assert.DoesNotContain(ProjectValidator.Validate(shell.Project), issue => issue.Severity == ValidationSeverity.Error);
+        await SettleAsync();
+        Save(window, "shuttles-zones.png", 1280);
+
+        shell.ShowPageCommand.Execute("Live");
+        for (int step = 0; step < 15; step++)
+        {
+            shell.Live.AdvanceSeconds(20);
+        }
+
+        Assert.Equal(4, shell.Live.Snapshot?.Shuttles.Count);
+        await SettleAsync();
+        Save(window, "live-demo-four-shuttles.png", 1280);
     }
 
     private static async Task CapturePage(ShellViewModel shell, Window window, string page, string fileName)

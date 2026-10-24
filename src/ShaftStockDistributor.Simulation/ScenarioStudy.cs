@@ -80,6 +80,10 @@ public sealed class StudyPoint
 
     public double Utilization2 { get; init; }
 
+    public double PeakUtilization { get; init; }
+
+    public IReadOnlyList<double> UtilizationByShuttle { get; init; } = [];
+
     public double AveragePullWaitSeconds { get; init; }
 
     public double MaxPullWaitSeconds { get; init; }
@@ -202,7 +206,7 @@ public static class SaturationDetector
             return true;
         }
 
-        if (settings.UtilizationCeiling is double ceiling && (point.Utilization1 > ceiling || point.Utilization2 > ceiling))
+        if (settings.UtilizationCeiling is double ceiling && Peak(point) > ceiling)
         {
             return true;
         }
@@ -225,7 +229,7 @@ public static class SaturationDetector
                 : $"lost crates exceed {Math.Max(0, settings.LostCratesPerHour):0.#} per hour");
         }
 
-        if (settings.UtilizationCeiling is double ceiling && (point.Utilization1 > ceiling || point.Utilization2 > ceiling))
+        if (settings.UtilizationCeiling is double ceiling && Peak(point) > ceiling)
         {
             reasons.Add($"a shuttle is above {ceiling:P0} utilization");
         }
@@ -233,6 +237,17 @@ public static class SaturationDetector
         return reasons.Count == 0
             ? "The load is still inside the sustainable range."
             : "Saturation: " + string.Join("; ", reasons) + ".";
+    }
+
+    private static double Peak(StudyPoint point)
+    {
+        double peak = Math.Max(point.PeakUtilization, Math.Max(point.Utilization1, point.Utilization2));
+        if (point.UtilizationByShuttle.Count > 0)
+        {
+            peak = Math.Max(peak, point.UtilizationByShuttle.Max());
+        }
+
+        return peak;
     }
 
     private static bool RatioMiss(StudyPoint point, SaturationSettings settings) =>
@@ -341,6 +356,8 @@ public static class ScenarioStudyRunner
                             AchievedPalletsPerHour = result.PalletsPerHour,
                             Utilization1 = result.Utilization1,
                             Utilization2 = result.Utilization2,
+                            PeakUtilization = result.Shuttles.Count == 0 ? Math.Max(result.Utilization1, result.Utilization2) : result.Shuttles.Max(shuttle => shuttle.Utilization),
+                            UtilizationByShuttle = result.Shuttles.Select(shuttle => shuttle.Utilization).ToArray(),
                             AveragePullWaitSeconds = result.AveragePullWaitSeconds,
                             MaxPullWaitSeconds = result.MaxPullWaitSeconds,
                             BlockedSeconds = result.BlockedSeconds,
@@ -374,6 +391,8 @@ public static class ScenarioStudyRunner
                 AchievedPalletsPerHour = group.Average(point => point.AchievedPalletsPerHour),
                 Utilization1 = group.Average(point => point.Utilization1),
                 Utilization2 = group.Average(point => point.Utilization2),
+                UtilizationByShuttle = AverageUtilization(group),
+                PeakUtilization = AverageUtilization(group).DefaultIfEmpty(Math.Max(group.Average(point => point.Utilization1), group.Average(point => point.Utilization2))).Max(),
                 AveragePullWaitSeconds = group.Average(point => point.AveragePullWaitSeconds),
                 MaxPullWaitSeconds = group.Max(point => point.MaxPullWaitSeconds),
                 BlockedSeconds = group.Average(point => point.BlockedSeconds),
@@ -432,7 +451,7 @@ public static class ScenarioStudyRunner
     {
         var lines = new List<string>
         {
-            "Scenario,AssignmentMode,LoadCratesPerHour,Replication,OfferedPalletsPerHour,AchievedPalletsPerHour,Shuttle1Utilization,Shuttle2Utilization,AveragePullWaitSeconds,MaxPullWaitSeconds,BlockedSeconds,OverflowingShafts,LostCrates"
+            "Scenario,AssignmentMode,LoadCratesPerHour,Replication,OfferedPalletsPerHour,AchievedPalletsPerHour,Shuttle1Utilization,Shuttle2Utilization,AveragePullWaitSeconds,MaxPullWaitSeconds,BlockedSeconds,OverflowingShafts,LostCrates,PeakUtilization,ShuttleUtilizations"
         };
         foreach (var point in result.Points)
         {
@@ -449,10 +468,30 @@ public static class ScenarioStudyRunner
                 point.MaxPullWaitSeconds.ToString("0.###"),
                 point.BlockedSeconds.ToString("0.###"),
                 point.OverflowingShafts.ToString(),
-                point.LostCrates.ToString()));
+                point.LostCrates.ToString(),
+                point.PeakUtilization.ToString("0.###"),
+                string.Join(';', point.UtilizationByShuttle.Select(value => value.ToString("0.###")))));
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static IReadOnlyList<double> AverageUtilization(IEnumerable<StudyPoint> points)
+    {
+        var list = points.ToList();
+        int count = list.Count == 0 ? 0 : list.Max(point => point.UtilizationByShuttle.Count);
+        if (count == 0)
+        {
+            return [];
+        }
+
+        var averages = new double[count];
+        for (int index = 0; index < count; index++)
+        {
+            averages[index] = list.Average(point => index < point.UtilizationByShuttle.Count ? point.UtilizationByShuttle[index] : 0);
+        }
+
+        return averages;
     }
 
     private static string Csv(string value)

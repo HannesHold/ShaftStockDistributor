@@ -18,8 +18,7 @@ public partial class OperationViewModel : ObservableObject
 
     public ObservableCollection<ArticleFlowVisual> Flows { get; } = new();
 
-    [ObservableProperty] private string _shuttle1 = UiText.Shuttle1;
-    [ObservableProperty] private string _shuttle2 = UiText.Shuttle2;
+    [ObservableProperty] private string _shuttleSummary = "";
     [ObservableProperty] private string _lockText = "";
     [ObservableProperty] private bool _sharedLocked;
     [ObservableProperty] private string _modeHint = UiText.ModeConfirmBody;
@@ -44,10 +43,9 @@ public partial class OperationViewModel : ObservableObject
             Flows.Add(flow);
         }
 
-        var first = snapshot.Shuttles.FirstOrDefault(shuttle => shuttle.Id == Core.ShuttleId.Shuttle1);
-        var second = snapshot.Shuttles.FirstOrDefault(shuttle => shuttle.Id == Core.ShuttleId.Shuttle2);
-        Shuttle1 = first is null ? UiText.Shuttle1 : $"{UiText.Shuttle1}: {first.Phase} · L{first.Level}";
-        Shuttle2 = second is null ? UiText.Shuttle2 : $"{UiText.Shuttle2}: {second.Phase} · L{second.Level}";
+        ShuttleSummary = snapshot.Shuttles.Count == 0
+            ? ""
+            : string.Join("    ", snapshot.Shuttles.Select(shuttle => $"Shuttle {shuttle.Id.Number}: {shuttle.Phase} · L{shuttle.Level}"));
         SharedLocked = snapshot.SharedZoneLocked || snapshot.AnyShuttleBlocked;
         LockText = snapshot.AnyShuttleBlocked ? UiText.Waiting : snapshot.SharedZoneLocked ? UiText.SharedLock : "";
     }

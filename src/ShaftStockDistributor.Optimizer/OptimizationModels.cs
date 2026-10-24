@@ -18,6 +18,8 @@ public sealed class CostBreakdown
 
     public double Shuttle2LoadHours { get; init; }
 
+    public IReadOnlyDictionary<ShuttleId, double> LoadHours { get; init; } = new Dictionary<ShuttleId, double>();
+
     public override string ToString() =>
         $"total {Total:0.###} (travel {Travel:0.###}, imbalance {Imbalance:0.###}, middle {MiddleTraffic:0.###}, penalty {Penalty:0.###})";
 }

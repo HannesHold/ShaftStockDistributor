@@ -1,6 +1,6 @@
 # Shaft Stock Distributor
 
-Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the two shuttles that pull those shafts. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
+Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the shuttles that pull those shafts. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
 
 The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia.
 
@@ -18,17 +18,21 @@ The aisle itself:
 
 - Shafts fill in the article color. A pull drains the shaft.
 - Shuttles move with the acceleration profile, horizontally and between levels at the same time.
-- The shared middle locks, and a shuttle that has to wait is drawn with a WAIT marker.
+- Shared overlaps lock, and a shuttle that has to wait is drawn with a WAIT marker. Every shuttle on the aisle is animated.
 - Playback is play, pause, step, and reset, from 1x to 400x.
 - The live dashboard shows pallets per hour, offered pallets per hour, utilization, pull wait, blocked time, and lost crates.
 
-The other pages edit the layout (including per-shuttle, per-axis speed), the crate catalog, the optimizer weights, and the scenario study. The operation page shows the pull queue, the event log, and shuttle state. Switching manual and automatic assignment asks for confirmation first.
+The Layout page edits the rack and a shuttle table: segment from/to, speed (default 0.3 m/s), and home. Add or remove shuttles (one up to the segment count), apply an even split, or restore the two-shuttle thirds preset. The rack paints each shuttle's exclusive segments and the shared overlaps. The operation page shows the pull queue, the event log, and every shuttle's state. Switching manual and automatic assignment asks for confirmation first.
 
 ## Screenshots
 
-Headless Skia captures of the main window. `live-demo.png` is the aisle at 1280×800 after the shuttles have started to move. `live-demo-wide.png` is the same view at 1920×1080. `article-generator.png` is the Articles page with the generator asking before a replace.
+Headless Skia captures of the main window. `live-demo.png` is the two-shuttle aisle at 1280×800 after the shuttles have started to move. `live-demo-wide.png` is the same view at 1920×1080. `shuttles-zones.png` is the Layout page with the shuttle table. `live-demo-four-shuttles.png` is the same aisle after an even split into four shuttles. `article-generator.png` is the Articles page with the generator asking before a replace.
 
 ![Live demo at 1280×800](docs/screenshots/live-demo.png)
+
+![Shuttles and zones](docs/screenshots/shuttles-zones.png)
+
+![Four shuttles on the live aisle](docs/screenshots/live-demo-four-shuttles.png)
 
 ![Article generator](docs/screenshots/article-generator.png)
 
@@ -83,16 +87,16 @@ dotnet run --project src/ShaftStockDistributor.Cli -- study --project samples/ex
 
 ## Project file
 
-JSON schema version 1, camelCase, enums as strings, shaft addresses 1-based (`segment`, `level`, `shaft`). `ProjectSerializer` loads and saves it. Assignment export headers are `Segment,Level,Shaft,Zone,ArticleId,ArticleName,Pinned`. Study CSV headers are `Scenario,AssignmentMode,LoadCratesPerHour,Replication,OfferedPalletsPerHour,AchievedPalletsPerHour,Shuttle1Utilization,Shuttle2Utilization,AveragePullWaitSeconds,MaxPullWaitSeconds,BlockedSeconds,OverflowingShafts,LostCrates`.
+JSON schema version 1, camelCase, enums as strings, shaft addresses 1-based (`segment`, `level`, `shaft`). Shuttle ids are `shuttle1`, `shuttle2`, and so on. Each shuttle stores `segmentFrom` and `segmentTo`. A file that still has only shuttle 1 and shuttle 2 and no ranges loads the thirds preset. `ProjectSerializer` loads and saves it. Assignment export headers are `Segment,Level,Shaft,Zone,ArticleId,ArticleName,Pinned`. The zone cell names the shuttle (`Shuttle 1`) or the overlap (`Shared 1+2`). Study CSV headers are `Scenario,AssignmentMode,LoadCratesPerHour,Replication,OfferedPalletsPerHour,AchievedPalletsPerHour,Shuttle1Utilization,Shuttle2Utilization,AveragePullWaitSeconds,MaxPullWaitSeconds,BlockedSeconds,OverflowingShafts,LostCrates,PeakUtilization,ShuttleUtilizations`.
 
 ## Assignment strategy
 
 The full rationale, with the worked shaft-count example and sketches, is in [docs/assignment-strategy.md](docs/assignment-strategy.md). Short version:
 
-- A segment is one rack. The first third of segments belongs to shuttle 1, the last third to shuttle 2, and the middle is shared.
+- A segment is one rack. The two-shuttle thirds preset gives shuttle 1 segments 1–8 and shuttle 2 segments 5–12 on the 12-segment example, so 1–4 and 9–12 are exclusive and 5–8 is shared. Any other count uses an even split: neighbours overlap by about `segments / (3 × shuttles)` segments (at least one). More shuttles make the exclusive pockets smaller, so A movers spread across more homes. A wider overlap gives B and C more shared shafts and makes the interlock matter on more of the aisle.
 - Shaft capacity is `floor(length / (flow dimension + gap))`. The number of shafts is the crates that arrive during the expected pull wait, divided by the headroom above the pull trigger.
 - **Example numbers:** 20 m / 0.40 m = 50 crates, trigger 40 + 5 = 45, headroom 5, 600 crates/h over 90 s is 15 crates, `ceil(15 / 5) = 3` shafts.
-- A movers are split across the two exclusive ends, near each shuttle's home, with one shared shaft when they need three or more. B and C movers prefer the middle.
+- A movers go to the exclusive segments of the shuttle with spare load, near that shuttle's home, with one shared shaft when they need three or more. B and C movers prefer a shared overlap.
 - Travel time is the slower axis. The planner scores trips from home. A return to a separate handover pose is not applied, because that pose is still unknown.
 - Annealing swaps unpinned shafts. The cost is travel hours, shuttle imbalance, shared-zone pull fraction, and a penalty for missing shafts. Default weights are 1, 1.2, 0.8, and 4.
 - Manual mode keeps the stored assignment. Automatic mode may move an empty, unpinned shaft only after the observation window, and only when that article is above its planned shaft count while another article is short. A shaft that still holds crates never changes article.
@@ -119,13 +123,23 @@ Seed 1, 2.5 h simulated with the first hour excluded as warm-up. Offered through
 
 On the planned split, automatic makes no reassignments and matches manual. The same shafts with the inflow moved to 25/35/40 (offered 72.1 pallets/h) let automatic pull more pallets and lose fewer crates. The naive plan still never pulls with shuttle 2. Achieved pallets can sit a little above offered because crates that arrived during warm-up are pulled inside the measured hour. The earlier 42-versus-53 gap was that fill-up, measured inside a 1 h run with only 0.1 h of warm-up, not a shuttle limit: utilization there was about 20%. The [strategy note](docs/assignment-strategy.md) has the cycle-time arithmetic and how to read the sweep. The raw sweep is `samples/example-study.csv` (2.5 h, 1 h warm-up, 3 replications, re-optimized once per scenario, both modes, 300–4000 crates/h).
 
+The same example, re-optimized for 400 iterations and run with seed 1 for 2.5 h (first hour excluded), compared across shuttle counts. The two-shuttle row is the thirds preset and matches the table above. Three and four shuttles use the even split (one shared segment between neighbours, homes spaced from the left end to the right end).
+
+| Shuttles | Layout | Pallets/h | Upper bound | Pulls | Utilization | Lost crates |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 | Thirds preset (overlap on 5–8) | 55.1 | 153.5 | 33 / 38 | 32% / 32% | 8 |
+| 3 | Even split (ranges 1–5, 5–9, 9–12) | 50.2 | 334.0 | 23 / 27 / 15 | 20% / 18% / 11% | 11 |
+| 4 | Even split (ranges 1–4, 4–7, 7–10, 10–12) | 51.3 | 507.4 | 21 / 13 / 14 / 20 | 15% / 6% / 4% / 9% | 9 |
+
+Offered throughput is 52.8 pallets/h, so the pair is already serving the example demand. Extra shuttles raise the ceiling, because each one only travels inside a shorter zone, and they cut utilization. They do not raise achieved pallets/h at this load. A wider overlap would move more B and C volume into the shared segments and make neighbours wait on each other; a narrower overlap keeps A movers on a private home shuttle.
+
 ## Assumptions
 
 - A pull discharges the whole shaft. Pallets credited equal discharged crates divided by crates per pallet, so the credit can be fractional.
 - The live pallets/hour figure is a sliding window, 20 simulated minutes unless you change it. Before that window has elapsed the card says "Warming up" and shows the cumulative average. Shafts can start full to the pull trigger so the picture moves immediately; those crates are opening stock. They stay in "Pallets pulled" and are left out of the rate.
 - Offered pallets/h is inflow divided by crates per pallet, summed over articles.
 - Arrivals are Poisson, from one `Random` seeded per run. Modern .NET uses the same algorithm on every platform.
-- All shafts share one length. Home and handover default to the aisle ends on level 1.
+- All shafts share one length. The two-shuttle preset puts homes at the aisle ends on level 1. An even split spaces homes from the left end to the right end.
 - Acceleration default is 0.2 m/s². Transfer default is 12 s. Expected pull wait default is 90 s.
 - The hardware port is a simulated adapter. `PlcHardwareStub.SendPullJob` throws `NotSupportedException` until OPC UA, S7, or TCP is chosen.
 

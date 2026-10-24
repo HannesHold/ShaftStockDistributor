@@ -211,7 +211,9 @@ public partial class StudyViewModel : ObservableObject
                 Load = point.LoadCratesPerHour.ToString("0"),
                 Offered = point.OfferedPalletsPerHour.ToString("0.0"),
                 Achieved = point.AchievedPalletsPerHour.ToString("0.0"),
-                Utilization = $"{point.Utilization1:P0} / {point.Utilization2:P0}",
+                Utilization = point.UtilizationByShuttle.Count == 0
+                    ? $"{point.Utilization1:P0} / {point.Utilization2:P0}"
+                    : string.Join(" / ", point.UtilizationByShuttle.Select(value => value.ToString("P0"))),
                 Lost = point.LostCrates.ToString(),
                 Blocked = point.BlockedSeconds.ToString("0")
             });

@@ -60,6 +60,7 @@ public partial class LiveDemoViewModel : ObservableObject
     [ObservableProperty] private string _theoreticalText = "0.0";
     [ObservableProperty] private string _util1Text = "0%";
     [ObservableProperty] private string _util2Text = "0%";
+    [ObservableProperty] private string _utilizationText = "—";
     [ObservableProperty] private string _waitText = "0 s";
     [ObservableProperty] private string _blockedText = "0 s";
     [ObservableProperty] private string _lostText = "0";
@@ -392,10 +393,15 @@ public partial class LiveDemoViewModel : ObservableObject
 
         Util1Text = kpis.Utilization1.ToString("P0", CultureInfo.InvariantCulture);
         Util2Text = kpis.Utilization2.ToString("P0", CultureInfo.InvariantCulture);
+        UtilizationText = kpis.Shuttles.Count == 0
+            ? $"1 {Util1Text} · 2 {Util2Text}"
+            : string.Join(" · ", kpis.Shuttles.Select(shuttle => $"{shuttle.Id.Number} {shuttle.Utilization.ToString("P0", CultureInfo.InvariantCulture)}"));
         WaitText = $"{kpis.AveragePullWaitSeconds:0} s";
         BlockedText = $"{kpis.BlockedSeconds:0} s";
         LostText = kpis.LostCrates.ToString(CultureInfo.InvariantCulture);
-        PullsText = $"{kpis.PullsShuttle1} / {kpis.PullsShuttle2}";
+        PullsText = kpis.Shuttles.Count == 0
+            ? $"{kpis.PullsShuttle1} / {kpis.PullsShuttle2}"
+            : string.Join(" / ", kpis.Shuttles.Select(shuttle => shuttle.Pulls.ToString(CultureInfo.InvariantCulture)));
         if (_session is not null)
         {
             TimeText = TimeSpan.FromSeconds(Math.Max(0, _session.Now)).ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture);

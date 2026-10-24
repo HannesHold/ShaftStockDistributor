@@ -21,6 +21,8 @@
   "shuttles": [
     {
       "id": "shuttle1",
+      "segmentFrom": 1,
+      "segmentTo": 8,
       "horizontalSpeedMetersPerSecond": 0.3,
       "verticalSpeedMetersPerSecond": 0.3,
       "horizontalAccelerationMetersPerSecondSquared": 0.2,
@@ -36,6 +38,8 @@
     },
     {
       "id": "shuttle2",
+      "segmentFrom": 5,
+      "segmentTo": 12,
       "horizontalSpeedMetersPerSecond": 0.3,
       "verticalSpeedMetersPerSecond": 0.3,
       "horizontalAccelerationMetersPerSecondSquared": 0.2,

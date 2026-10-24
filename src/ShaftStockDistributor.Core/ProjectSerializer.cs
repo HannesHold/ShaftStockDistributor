@@ -64,6 +64,7 @@ public static class ProjectSerializer
             shuttle.Handover ??= new ShuttlePose();
         }
 
+        ShuttleLayout.FillUnsetRanges(project);
         return project;
     }
 

@@ -25,6 +25,8 @@ public sealed class ShaftRuntime
 
     public required ZoneKind Zone { get; init; }
 
+    public IReadOnlyList<ShuttleId> Servers { get; init; } = [];
+
     public required double X { get; init; }
 
     public required double Y { get; init; }
