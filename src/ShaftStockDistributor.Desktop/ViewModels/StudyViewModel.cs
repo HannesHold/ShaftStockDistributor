@@ -48,7 +48,6 @@ public partial class StudyViewModel : ObservableObject
     private readonly IStudyService _study;
     private readonly IFileDialogs _dialogs;
     private DistributorProject? _project;
-    private StudyResult? _result;
 
     public StudyViewModel(IMessenger messenger, IStudyService study, IFileDialogs dialogs)
     {
@@ -71,16 +70,17 @@ public partial class StudyViewModel : ObservableObject
     public Axis[] StudyYAxes { get; }
 
     [ObservableProperty] private ISeries[] _studySeries = Array.Empty<ISeries>();
+    [ObservableProperty] private StudyResult? _result;
     [ObservableProperty] private InflowScenario? _selectedScenario;
-    [ObservableProperty] private double _minLoad = 600;
-    [ObservableProperty] private double _maxLoad = 4200;
-    [ObservableProperty] private double _stepLoad = 600;
-    [ObservableProperty] private int _replications = 2;
-    [ObservableProperty] private double _durationHours = 0.6;
-    [ObservableProperty] private double _warmupHours = 0.05;
+    [ObservableProperty] private double _minLoad = 300;
+    [ObservableProperty] private double _maxLoad = 4000;
+    [ObservableProperty] private double _stepLoad = 500;
+    [ObservableProperty] private int _replications = 3;
+    [ObservableProperty] private double _durationHours = 2.5;
+    [ObservableProperty] private double _warmupHours = 1;
     [ObservableProperty] private bool _reoptimize = true;
     [ObservableProperty] private bool _compareModes;
-    [ObservableProperty] private double _achievedRatio = 0.98;
+    [ObservableProperty] private double _achievedRatio = 0.90;
     [ObservableProperty] private bool _lostRule = true;
     [ObservableProperty] private string _utilizationCeiling = "";
     [ObservableProperty] private int _iterations = 80;
@@ -180,7 +180,7 @@ public partial class StudyViewModel : ObservableObject
     [RelayCommand]
     private async Task ExportAsync()
     {
-        if (_result is null)
+        if (Result is null)
         {
             return;
         }
@@ -191,13 +191,13 @@ public partial class StudyViewModel : ObservableObject
             return;
         }
 
-        File.WriteAllText(path, ScenarioStudyRunner.ToCsv(_result));
+        File.WriteAllText(path, ScenarioStudyRunner.ToCsv(Result));
         Status = UiText.StudyExported;
     }
 
     public void Show(StudyResult result)
     {
-        _result = result;
+        Result = result;
         Rows.Clear();
         foreach (var point in result.Means)
         {
@@ -236,9 +236,9 @@ public partial class StudyViewModel : ObservableObject
             {
                 Name = group.Key + " achieved",
                 Values = ordered.Select(point => new ObservablePoint(point.LoadCratesPerHour, point.AchievedPalletsPerHour)).ToList(),
-                GeometrySize = 8,
+                GeometrySize = 10,
                 Fill = null,
-                Stroke = new SolidColorPaint(paint, 2.5f),
+                Stroke = new SolidColorPaint(paint, 3.5f),
                 GeometryStroke = new SolidColorPaint(paint, 2),
                 GeometryFill = new SolidColorPaint(paint)
             });
@@ -248,7 +248,30 @@ public partial class StudyViewModel : ObservableObject
                 Values = ordered.Select(point => new ObservablePoint(point.LoadCratesPerHour, point.OfferedPalletsPerHour)).ToList(),
                 GeometrySize = 0,
                 Fill = null,
-                Stroke = new SolidColorPaint(paint, 1.5f) { PathEffect = new DashEffect(new float[] { 6, 5 }) }
+                Stroke = new SolidColorPaint(paint, 1.8f) { PathEffect = new DashEffect(new float[] { 6, 5 }) }
+            });
+        }
+
+        if (result.TheoreticalPalletsPerHour > 0 && result.Means.Count > 0)
+        {
+            double minLoad = result.Means.Min(point => point.LoadCratesPerHour);
+            double maxLoad = result.Means.Max(point => point.LoadCratesPerHour);
+            var capacityPaint = new SolidColorPaint(new SKColor(244, 247, 251), 2.2f)
+            {
+                PathEffect = new DashEffect(new float[] { 2, 4 })
+            };
+            series.Add(new LineSeries<ObservablePoint>
+            {
+                Name = UiText.TheoreticalCapacity,
+                Values = new[]
+                {
+                    new ObservablePoint(minLoad, result.TheoreticalPalletsPerHour),
+                    new ObservablePoint(maxLoad, result.TheoreticalPalletsPerHour)
+                },
+                GeometrySize = 0,
+                Fill = null,
+                LineSmoothness = 0,
+                Stroke = capacityPaint
             });
         }
 

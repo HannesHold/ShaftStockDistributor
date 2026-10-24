@@ -50,6 +50,13 @@ public sealed class Article
     /// <summary>Active inflow used by the optimizer and the simulation. Scenarios overwrite this.</summary>
     public double InflowCratesPerHour { get; set; }
 
+    /// <summary>
+    /// Inflow the stored shaft plan was sized for. Null means the active inflow is the plan.
+    /// A scenario change or a load sweep can replace <see cref="InflowCratesPerHour"/> and leave this in place,
+    /// so automatic mode can tell a shifted split from the plan.
+    /// </summary>
+    public double? PlannedInflowCratesPerHour { get; set; }
+
     public string ColorHex { get; set; } = "#4C8DFF";
 
     public int PullTriggerCrates => Math.Max(0, CratesPerPallet + Offset);
@@ -179,25 +186,25 @@ public sealed class OperationSettings
 
 public sealed class StudySettings
 {
-    public double MinCratesPerHour { get; set; } = 600;
+    public double MinCratesPerHour { get; set; } = 300;
 
-    public double MaxCratesPerHour { get; set; } = 4200;
+    public double MaxCratesPerHour { get; set; } = 4000;
 
-    public double StepCratesPerHour { get; set; } = 600;
+    public double StepCratesPerHour { get; set; } = 500;
 
-    public int Replications { get; set; } = 2;
+    public int Replications { get; set; } = 3;
 
     public int BaseSeed { get; set; } = 1;
 
-    public double DurationHours { get; set; } = 1;
+    public double DurationHours { get; set; } = 2.5;
 
-    public double WarmupHours { get; set; } = 0.1;
+    public double WarmupHours { get; set; } = 1;
 
     public bool ReoptimizePerScenario { get; set; } = true;
 
     public bool CompareAssignmentModes { get; set; }
 
-    public double AchievedRatioThreshold { get; set; } = 0.98;
+    public double AchievedRatioThreshold { get; set; } = 0.90;
 
     public bool TreatLostCratesAsSaturation { get; set; } = true;
 

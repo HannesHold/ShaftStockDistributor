@@ -17,6 +17,7 @@ public sealed class OperationsController
     private readonly List<PullJob> _jobs = new();
     private readonly List<string> _events = new();
     private readonly Queue<double> _reassignmentTimes = new();
+    private readonly Dictionary<string, int> _plannedShafts = new(StringComparer.Ordinal);
     private readonly ZoneInterlock _interlock;
     private readonly double _warmup;
     private int _sequence;
@@ -63,6 +64,19 @@ public sealed class OperationsController
         }
 
         _byAddress = Shafts.ToDictionary(shaft => shaft.Address);
+        foreach (var articleId in _articles.Keys)
+        {
+            _plannedShafts[articleId] = 0;
+        }
+
+        foreach (var shaft in Shafts)
+        {
+            if (shaft.ArticleId is not null && _plannedShafts.ContainsKey(shaft.ArticleId))
+            {
+                _plannedShafts[shaft.ArticleId]++;
+            }
+        }
+
         Shuttles = project.Shuttles
             .OrderBy(shuttle => shuttle.Id)
             .Select(shuttle => new ShuttleRuntime
@@ -204,6 +218,7 @@ public sealed class OperationsController
         shaft.Pinned = pinned;
         if (shaft.ArticleId != articleId)
         {
+            MovePlan(shaft.ArticleId, articleId);
             shaft.ArticleId = articleId;
             ApplyCapacity(shaft);
             shaft.TriggerTime = null;
@@ -300,22 +315,25 @@ public sealed class OperationsController
         return Shuttles.Sum(shuttle => shuttle.BlockedSeconds) + extra;
     }
 
-    public double ObservedPerHour(string articleId, double now)
+    public double ObservedPerHour(string articleId, double now) => Observe(articleId, now).CratesPerHour;
+
+    public FlowSample Observe(string articleId, double now)
     {
         if (!_articles.TryGetValue(articleId, out var article))
         {
-            return 0;
+            return new FlowSample(0, 0, 0);
         }
 
         TrimArrivals(article, now);
         double window = Math.Max(1, _project.Operation.ObservationWindowSeconds);
-        if (now < 1 || article.Arrivals.Count == 0)
+        if (now + 1e-9 < _project.Operation.ObservationWindowSeconds)
         {
-            return article.Article.InflowCratesPerHour;
+            return new FlowSample(AssignmentPlan.PlannedInflow(article.Article), 0, Math.Max(0, now));
         }
 
         double elapsed = Math.Min(window, Math.Max(now, 1));
-        return article.Arrivals.Count / elapsed * 3600.0;
+        int samples = article.Arrivals.Count;
+        return new FlowSample(samples / elapsed * 3600.0, samples, elapsed);
     }
 
     private void OnHardwareCompleted(object? sender, JobResultEvent e) => OnJobStage(e, _clock());
@@ -430,6 +448,8 @@ public sealed class OperationsController
             shaft.MeasuredPullCount++;
             shuttle.MeasuredPulls++;
         }
+
+        shaft.LastPullTime = now;
 
         shuttle.Pulls++;
         shuttle.Phase = ShuttlePhase.Idle;
@@ -654,8 +674,10 @@ public sealed class OperationsController
             _project.Operation,
             Mode,
             now,
-            id => ObservedPerHour(id, now),
-            recent);
+            id => Observe(id, now),
+            recent,
+            _plannedShafts,
+            Recommend);
         if (next is null || next == shaft.ArticleId)
         {
             return;
@@ -702,6 +724,28 @@ public sealed class OperationsController
         };
         double overflow = shaft.Count >= Math.Max(1, shaft.Capacity) ? 1 : 0;
         return overflow * 1000 + fill * 100 + abc * 10 + Math.Max(0, now - job.Created) * 0.01;
+    }
+
+    private int Recommend(Article article, double cratesPerHour) =>
+        ShaftCountCalculator.Recommend(
+            cratesPerHour,
+            article.CratesPerPallet,
+            article.Offset,
+            _geometry.CapacityFor(article),
+            _project.Optimizer.ExpectedPullWaitSeconds);
+
+    private void MovePlan(string? from, string? to)
+    {
+        if (from is not null && _plannedShafts.ContainsKey(from))
+        {
+            _plannedShafts[from] = Math.Max(0, _plannedShafts[from] - 1);
+        }
+
+        if (to is not null)
+        {
+            _plannedShafts.TryGetValue(to, out int count);
+            _plannedShafts[to] = count + 1;
+        }
     }
 
     private void ApplyCapacity(ShaftRuntime shaft)

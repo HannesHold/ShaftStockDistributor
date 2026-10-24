@@ -61,8 +61,8 @@ Command line:
 ```bash
 dotnet run --project src/ShaftStockDistributor.Cli -- sample --out samples/example-warehouse.json
 dotnet run --project src/ShaftStockDistributor.Cli -- optimize --project samples/example-warehouse.json
-dotnet run --project src/ShaftStockDistributor.Cli -- simulate --project samples/example-warehouse.json --hours 1 --warmup 0.1 --seed 1 --mode Manual
-dotnet run --project src/ShaftStockDistributor.Cli -- study --project samples/example-warehouse.json --min 600 --max 3600 --step 600 --reps 2 --hours 0.5 --compare-modes --csv samples/example-study.csv
+dotnet run --project src/ShaftStockDistributor.Cli -- simulate --project samples/example-warehouse.json --hours 2.5 --warmup 1 --seed 1 --mode Manual
+dotnet run --project src/ShaftStockDistributor.Cli -- study --project samples/example-warehouse.json --compare-modes --csv samples/example-study.csv
 ```
 
 `--no-optimize` keeps the assignment already stored in the file. The study re-optimizes once per scenario unless you pass that flag.
@@ -87,8 +87,8 @@ The full rationale, with the worked shaft-count example and sketches, is in [doc
 - A movers are split across the two exclusive ends, near each shuttle's home, with one shared shaft when they need three or more. B and C movers prefer the middle.
 - Travel time is the slower axis. The planner scores trips from home. A return to a separate handover pose is not applied, because that pose is still unknown.
 - Annealing swaps unpinned shafts. The cost is travel hours, shuttle imbalance, shared-zone pull fraction, and a penalty for missing shafts. Default weights are 1, 1.2, 0.8, and 4.
-- Manual mode keeps the stored assignment. Automatic mode may retarget an empty, unpinned shaft, with hysteresis, a cooldown, and a cap of 24 changes per hour. A shaft that still holds crates never changes article.
-- The saturation chart plots offered and achieved pallets/h. A load is saturated when achieved stays under 98% of offered, when any crate is lost, or when utilization crosses an optional ceiling. Read the curves as well as the marker: a short window, or a few lost crates, marks the first point and reports sustainable throughput as 0.
+- Manual mode keeps the stored assignment. Automatic mode may move an empty, unpinned shaft only after the observation window, and only when that article is above its planned shaft count while another article is short. A shaft that still holds crates never changes article.
+- The study chart plots achieved pallets/h (solid), offered pallets/h (dashed), a horizontal theoretical shuttle-capacity line, and a marker where achieved stays under 90% of offered through the rest of the sweep. Defaults are 300–4000 crates/h, 3 replications, 2.5 h with 1 h warm-up.
 
 ## Sample run
 
@@ -99,15 +99,17 @@ Optimizer, 400 iterations, example warehouse:
 | Naive, articles in order from the left | 1.460 | 0.260 | 1.000 | 0 |
 | Optimized | 0.815 | 0.584 | 0.082 | 0.165 |
 
-One simulated hour, seed 1, 0.1 h warm-up excluded, offered 52.8 pallets/h at the example 1800 crates/h:
+Seed 1, 2.5 h simulated with the first hour excluded as warm-up. Offered throughput at the example 1800 crates/h is 52.8 pallets/h. A conservative shuttle ceiling, mean trip from home plus the 12 s transfer and one pallet per pull, is about 100 pallets/h.
 
 | Assignment | Mode | Pallets/h | Pulls (shuttle 1 / 2) | Utilization | Lost crates |
 | --- | --- | --- | --- | --- | --- |
-| Optimized | Manual | 42.4 | 12 / 21 | 18.5% / 27.1% | 6 |
-| Optimized | Automatic | 21.7 | 4 / 13 | 7.0% / 18.6% | 390 |
-| Naive | Manual | 41.4 | 33 / 0 | 20.2% / 0% | 8 |
+| Optimized | Manual | 55.1 | 33 / 38 | 32% / 32% | 8 |
+| Optimized | Automatic | 55.1 | 33 / 38 | 32% / 32% | 8 |
+| Naive | Manual | 53.4 | 71 / 0 | 23% / 0% | 12 |
+| Optimized plan, inflow shifted to 25/35/40 | Manual | 66.8 | 26 / 54 | 25% / 40% | 82 |
+| Optimized plan, inflow shifted to 25/35/40 | Automatic | 68.9 | 35 / 48 | 24% / 47% | 71 |
 
-The optimized plan costs more travel because it sends work to shuttle 2, and the naive plan never pulls with shuttle 2. Achieved pallets are close on this particular hour; the balance shows up in who does the pulls. Automatic mode retargets empty shafts during the hour and, on this hypothetical inflow, loses a lot of crates. The [strategy note](docs/assignment-strategy.md) explains when to use each mode, and how to read a sweep where the strict saturation rule fires at 600 crates/h. The raw sweep is `samples/example-study.csv` (0.5 h, 0.05 h warm-up, 2 replications, re-optimized once per scenario, both modes).
+On the planned split, automatic makes no reassignments and matches manual. The same shafts with the inflow moved to 25/35/40 (offered 72.1 pallets/h) let automatic pull more pallets and lose fewer crates. The naive plan still never pulls with shuttle 2. Achieved pallets can sit a little above offered because crates that arrived during warm-up are pulled inside the measured hour. The earlier 42-versus-53 gap was that fill-up, measured inside a 1 h run with only 0.1 h of warm-up, not a shuttle limit: utilization there was about 20%. The [strategy note](docs/assignment-strategy.md) has the cycle-time arithmetic and how to read the sweep. The raw sweep is `samples/example-study.csv` (2.5 h, 1 h warm-up, 3 replications, re-optimized once per scenario, both modes, 300–4000 crates/h).
 
 ## Assumptions
 

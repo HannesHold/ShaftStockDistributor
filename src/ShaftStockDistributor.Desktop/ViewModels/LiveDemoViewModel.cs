@@ -22,6 +22,7 @@ public partial class LiveDemoViewModel : ObservableObject
     private DistributorProject? _project;
     private ShaftAddress? _selected;
     private double _lastSample = -1;
+    private readonly List<(double Time, double Pallets)> _palletTrace = new();
 
     public LiveDemoViewModel(IMessenger messenger, IUiClock clock, IOptimizerService optimizer, IProjectStore store)
     {
@@ -30,7 +31,7 @@ public partial class LiveDemoViewModel : ObservableObject
         _store = store;
         PalletSeries = new ISeries[]
         {
-            Line("Pallets", new SKColor(76, 141, 255), PalletHistory)
+            Line(UiText.PalletsPerHour, new SKColor(76, 141, 255), PalletHistory)
         };
         UtilSeries = new ISeries[]
         {
@@ -56,6 +57,8 @@ public partial class LiveDemoViewModel : ObservableObject
 
     public ObservableCollection<string> Scenarios { get; } = new();
 
+    public ObservableCollection<LegendItem> Legend { get; } = new();
+
     public ISeries[] PalletSeries { get; }
 
     public ISeries[] UtilSeries { get; }
@@ -76,6 +79,7 @@ public partial class LiveDemoViewModel : ObservableObject
     [ObservableProperty] private string _palletsPerHourText = "0.0";
     [ObservableProperty] private string _totalPalletsText = "0";
     [ObservableProperty] private string _offeredText = "0.0";
+    [ObservableProperty] private string _theoreticalText = "0.0";
     [ObservableProperty] private string _util1Text = "0%";
     [ObservableProperty] private string _util2Text = "0%";
     [ObservableProperty] private string _waitText = "0 s";
@@ -262,6 +266,7 @@ public partial class LiveDemoViewModel : ObservableObject
         }
 
         SelectedScenario = project.ActiveScenarioName ?? project.Scenarios.FirstOrDefault()?.Name;
+        TheoreticalText = TheoreticalThroughput.PalletsPerHour(project).ToString("0.0");
         ArticleChoices.Clear();
         ArticleChoices.Add(new ArticleChoice { Id = "", Name = UiText.ClearArticle });
         foreach (var article in project.Articles)
@@ -293,11 +298,13 @@ public partial class LiveDemoViewModel : ObservableObject
             DurationSeconds = HorizonSeconds,
             WarmupSeconds = 0,
             Seed = Seed,
-            Mode = _project.AssignmentMode
+            Mode = _project.AssignmentMode,
+            WarmStart = true
         });
         PalletHistory.Clear();
         Util1History.Clear();
         Util2History.Clear();
+        _palletTrace.Clear();
         _lastSample = -1;
         Publish();
     }
@@ -312,7 +319,8 @@ public partial class LiveDemoViewModel : ObservableObject
         var snapshot = _session.Capture();
         Snapshot = snapshot;
         var kpis = snapshot.Kpis;
-        PalletsPerHourText = kpis.PalletsPerHour.ToString("0.0");
+        double rolling = RollingPalletsPerHour(snapshot.TimeSeconds, kpis.Pallets);
+        PalletsPerHourText = rolling.ToString("0.0");
         TotalPalletsText = kpis.Pallets.ToString("0.0");
         OfferedText = kpis.OfferedPalletsPerHour.ToString("0.0");
         Util1Text = kpis.Utilization1.ToString("P0");
@@ -324,10 +332,10 @@ public partial class LiveDemoViewModel : ObservableObject
         TimeText = TimeSpan.FromSeconds(Math.Max(0, snapshot.TimeSeconds)).ToString(@"hh\:mm\:ss");
         SharedLocked = snapshot.SharedZoneLocked;
         ShuttleWaiting = snapshot.AnyShuttleBlocked;
-        if (_lastSample < 0 || snapshot.TimeSeconds - _lastSample >= 60)
+        if (_lastSample < 0 || snapshot.TimeSeconds - _lastSample >= 25)
         {
             _lastSample = snapshot.TimeSeconds;
-            PalletHistory.Add(kpis.PalletsPerHour);
+            PalletHistory.Add(rolling);
             Util1History.Add(kpis.Utilization1 * 100);
             Util2History.Add(kpis.Utilization2 * 100);
             Trim(PalletHistory);
@@ -335,7 +343,32 @@ public partial class LiveDemoViewModel : ObservableObject
             Trim(Util2History);
         }
 
+        Legend.Clear();
+        foreach (var flow in snapshot.ArticleFlows)
+        {
+            Legend.Add(new LegendItem { Name = flow.Name, ColorHex = flow.ColorHex });
+        }
+
         _messenger.Send(new SimulationUpdatedMessage { Snapshot = snapshot });
+    }
+
+    private double RollingPalletsPerHour(double now, double pallets)
+    {
+        _palletTrace.Add((now, pallets));
+        double start = now - 600;
+        while (_palletTrace.Count > 1 && _palletTrace[0].Time < start)
+        {
+            _palletTrace.RemoveAt(0);
+        }
+
+        var first = _palletTrace[0];
+        double elapsed = now - first.Time;
+        if (elapsed < 1)
+        {
+            return 0;
+        }
+
+        return Math.Max(0, (pallets - first.Pallets) / elapsed * 3600.0);
     }
 
     private static void Trim(ObservableCollection<double> values)
@@ -353,7 +386,7 @@ public partial class LiveDemoViewModel : ObservableObject
         GeometrySize = 0,
         Fill = null,
         LineSmoothness = 0.3,
-        Stroke = new SolidColorPaint(color, 2)
+        Stroke = new SolidColorPaint(color, 3.5f)
     };
 
     private static Axis Axis(string name) => new()
@@ -365,4 +398,11 @@ public partial class LiveDemoViewModel : ObservableObject
         TextSize = 11,
         NameTextSize = 12
     };
+}
+
+public sealed class LegendItem
+{
+    public required string Name { get; init; }
+
+    public required string ColorHex { get; init; }
 }

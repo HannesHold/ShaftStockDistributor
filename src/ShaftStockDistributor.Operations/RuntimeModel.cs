@@ -53,6 +53,8 @@ public sealed class ShaftRuntime
 
     public int MeasuredPullCount { get; set; }
 
+    public double? LastPullTime { get; set; }
+
     public bool MeasuredOverflow { get; set; }
 
     public double ReassignNotBefore { get; set; }

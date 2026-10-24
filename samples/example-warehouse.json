@@ -67,6 +67,7 @@
       "offset": 4,
       "classWeight": 1,
       "inflowCratesPerHour": 420.00000000000006,
+      "plannedInflowCratesPerHour": 420.00000000000006,
       "colorHex": "#3D7EFF",
       "pullTriggerCrates": 44
     },
@@ -86,6 +87,7 @@
       "offset": 6,
       "classWeight": 1,
       "inflowCratesPerHour": 420.00000000000006,
+      "plannedInflowCratesPerHour": 420.00000000000006,
       "colorHex": "#00B3A4",
       "pullTriggerCrates": 54
     },
@@ -105,6 +107,7 @@
       "offset": 4,
       "classWeight": 1,
       "inflowCratesPerHour": 420.00000000000006,
+      "plannedInflowCratesPerHour": 420.00000000000006,
       "colorHex": "#7C5CFF",
       "pullTriggerCrates": 40
     },
@@ -124,6 +127,7 @@
       "offset": 4,
       "classWeight": 1,
       "inflowCratesPerHour": 120.00000000000001,
+      "plannedInflowCratesPerHour": 120.00000000000001,
       "colorHex": "#F0A202",
       "pullTriggerCrates": 36
     },
@@ -143,6 +147,7 @@
       "offset": 5,
       "classWeight": 1,
       "inflowCratesPerHour": 120.00000000000001,
+      "plannedInflowCratesPerHour": 120.00000000000001,
       "colorHex": "#E07A3D",
       "pullTriggerCrates": 45
     },
@@ -162,6 +167,7 @@
       "offset": 3,
       "classWeight": 1,
       "inflowCratesPerHour": 120.00000000000001,
+      "plannedInflowCratesPerHour": 120.00000000000001,
       "colorHex": "#C45C26",
       "pullTriggerCrates": 27
     },
@@ -181,6 +187,7 @@
       "offset": 2,
       "classWeight": 1,
       "inflowCratesPerHour": 90.00000000000001,
+      "plannedInflowCratesPerHour": 90.00000000000001,
       "colorHex": "#8BD450",
       "pullTriggerCrates": 22
     },
@@ -200,6 +207,7 @@
       "offset": 2,
       "classWeight": 1,
       "inflowCratesPerHour": 90.00000000000001,
+      "plannedInflowCratesPerHour": 90.00000000000001,
       "colorHex": "#5AA9E6",
       "pullTriggerCrates": 18
     },
@@ -219,6 +227,7 @@
       "offset": 5,
       "classWeight": 0,
       "inflowCratesPerHour": 0,
+      "plannedInflowCratesPerHour": 0,
       "colorHex": "#E85D75",
       "pullTriggerCrates": 35
     }
@@ -6748,16 +6757,16 @@
     "observationWindowSeconds": 600
   },
   "study": {
-    "minCratesPerHour": 600,
-    "maxCratesPerHour": 4200,
-    "stepCratesPerHour": 600,
-    "replications": 2,
+    "minCratesPerHour": 300,
+    "maxCratesPerHour": 4000,
+    "stepCratesPerHour": 500,
+    "replications": 3,
     "baseSeed": 1,
-    "durationHours": 1,
-    "warmupHours": 0.1,
+    "durationHours": 2.5,
+    "warmupHours": 1,
     "reoptimizePerScenario": true,
     "compareAssignmentModes": false,
-    "achievedRatioThreshold": 0.98,
+    "achievedRatioThreshold": 0.9,
     "treatLostCratesAsSaturation": true,
     "utilizationCeiling": null
   }

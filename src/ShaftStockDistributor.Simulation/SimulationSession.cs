@@ -38,6 +38,11 @@ public sealed class SimulationSession
             () => session._now,
             options.WarmupSeconds,
             options.Mode);
+        if (options.WarmStart)
+        {
+            session.WarmFill();
+        }
+
         session.SeedArrivals(new Random(options.Seed));
         return session;
     }
@@ -105,9 +110,30 @@ public sealed class SimulationSession
             LostCrates = Controller.MeasuredLost,
             ControllerPullJobs = Controller.PullJobsSent,
             HardwarePullJobs = Hardware.PullJobsSent,
+            ReassignmentCount = Controller.ReassignmentCount,
             LostCratesByArticle = lost,
             PullsByShaft = pulls
         };
+    }
+
+    private void WarmFill()
+    {
+        foreach (var shaft in Controller.Shafts.OrderBy(item => item.Address.ToString(), StringComparer.Ordinal))
+        {
+            if (shaft.ArticleId is null)
+            {
+                continue;
+            }
+
+            var article = Controller.Project.FindArticle(shaft.ArticleId);
+            if (article is null || shaft.Capacity <= 0)
+            {
+                continue;
+            }
+
+            int target = Math.Min(shaft.Capacity, Math.Max(0, article.PullTriggerCrates));
+            Controller.OnShaftCountReported(shaft.Address, target, 0);
+        }
     }
 
     private void SeedArrivals(Random random)
@@ -187,6 +213,7 @@ public sealed class SimulationSession
                 Pinned = shaft.Pinned,
                 PullCount = shaft.MeasuredPullCount,
                 Transferring = shaft.TransferLocked,
+                RecentlyPulled = shaft.LastPullTime is double pulled && _now > pulled && _now - pulled <= 4,
                 XMeters = shaft.X,
                 YMeters = shaft.Y
             };
@@ -205,7 +232,9 @@ public sealed class SimulationSession
                 Level = shuttle.Level,
                 Phase = shuttle.Phase == ShuttlePhase.Blocked ? "Waiting" : shuttle.Phase.ToString(),
                 IsBlocked = shuttle.Phase == ShuttlePhase.Blocked,
-                InSharedZone = inShared
+                InSharedZone = inShared,
+                TargetXMeters = shuttle.InMotion || shuttle.Phase == ShuttlePhase.Blocked ? shuttle.MotionToX : null,
+                TargetYMeters = shuttle.InMotion || shuttle.Phase == ShuttlePhase.Blocked ? shuttle.MotionToY : null
             };
         }).ToList();
 

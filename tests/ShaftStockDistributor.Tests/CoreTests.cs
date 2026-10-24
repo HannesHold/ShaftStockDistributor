@@ -66,7 +66,7 @@ public class CapacityAndTravelTests
         // 600 crates/h during a 90 s wait = 15 crates -> ceil(15 / 5) = 3 shafts.
         int capacity = (int)Math.Floor(20.0 / 0.40);
         Assert.Equal(50, capacity);
-        Assert.Equal(3, ShaftStockDistributor.Optimizer.ShaftCountCalculator.Recommend(600, 40, 5, capacity, 90));
+        Assert.Equal(3, ShaftCountCalculator.Recommend(600, 40, 5, capacity, 90));
     }
 
     [Fact]

@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ShaftStockDistributor.Desktop.ViewModels"
              xmlns:local="using:ShaftStockDistributor.Desktop"
-             xmlns:lvc="using:LiveChartsCore.SkiaSharpView.Avalonia"
+             xmlns:controls="using:ShaftStockDistributor.Desktop.Controls"
              xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
              x:Class="ShaftStockDistributor.Desktop.Views.StudyView"
              x:DataType="vm:StudyViewModel">
@@ -68,8 +68,8 @@
         <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" Height="6" IsVisible="{Binding IsBusy}" />
       </StackPanel>
     </Border>
-    <Border Grid.Row="2" Classes="card" Padding="8">
-      <lvc:CartesianChart x:Name="StudyChart" Series="{Binding StudySeries}" XAxes="{Binding StudyXAxes}" YAxes="{Binding StudyYAxes}" LegendPosition="Bottom" AnimationsSpeed="00:00:00" Background="Transparent" />
+    <Border Grid.Row="2" Classes="card" Padding="4" MinHeight="280">
+      <controls:StudyChart Result="{Binding Result}" />
     </Border>
     <ItemsControl Grid.Row="3" ItemsSource="{Binding Saturations}">
       <ItemsControl.ItemsPanel>

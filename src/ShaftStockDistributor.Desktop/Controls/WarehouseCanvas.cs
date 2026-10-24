@@ -28,7 +28,7 @@ public sealed class WarehouseCanvas : Control
     public static readonly StyledProperty<ICommand?> ShaftClickCommandProperty =
         AvaloniaProperty.Register<WarehouseCanvas, ICommand?>(nameof(ShaftClickCommand));
 
-    private readonly List<(Rect Rect, ShaftAddress Address)> _hits = new();
+    private readonly List<(Rect Rect, ShaftAddress Address, string Tip)> _hits = new();
     private readonly Dictionary<uint, IBrush> _brushes = new();
 
     static WarehouseCanvas()
@@ -110,7 +110,8 @@ public sealed class WarehouseCanvas : Control
             double x = SegmentX(plot, shaft.Segment, snapshot.ShaftsPerLevel, cellW, segmentGapPx) + (shaft.Shaft - 1) * cellW;
             double y = plot.Y + (snapshot.Levels - shaft.Level) * (cellH + levelGapPx);
             var rect = new Rect(x + 0.6, y + 0.6, Math.Max(1, cellW - 1.2), Math.Max(1, cellH - 1.2));
-            _hits.Add((rect, shaft.Address));
+            string article = string.IsNullOrEmpty(shaft.ArticleName) ? "Empty" : shaft.ArticleName;
+            _hits.Add((rect, shaft.Address, $"{shaft.Address} · {article} · {shaft.Count}/{shaft.Capacity} · {shaft.Zone}"));
             context.FillRectangle(Brush(Color.Parse("#243447")), rect);
             context.DrawRectangle(null, new Pen(Brush(Color.Parse("#31465C")), 0.8), rect);
             Color ink = ShowHeatmap ? Heat(shaft.PullCount, maxPulls) : Parse(shaft.ColorHex);
@@ -126,9 +127,9 @@ public sealed class WarehouseCanvas : Control
                 context.FillRectangle(Brush(ink), new Rect(rect.X, rect.Y, rect.Width, Math.Min(3, rect.Height)));
             }
 
-            if (shaft.Transferring)
+            if (shaft.Transferring || shaft.RecentlyPulled)
             {
-                context.DrawRectangle(null, new Pen(Brush(Color.Parse("#F4F7FB")), 1.4), rect, 1, 1);
+                context.DrawRectangle(null, new Pen(Brush(Color.Parse(shaft.RecentlyPulled ? "#F0A202" : "#F4F7FB")), 1.8), rect, 1, 1);
             }
 
             if (shaft.Pinned)
@@ -156,8 +157,20 @@ public sealed class WarehouseCanvas : Control
         {
             double cx = MetersToX(plot, snapshot, shuttle.XMeters, cellW, segmentGapPx);
             double cy = MetersToY(plot, snapshot, shuttle.YMeters, cellH, levelGapPx);
-            double w = Math.Clamp(cellW * 2.4, 16, 36);
-            double h = Math.Clamp(cellH * 0.42, 12, 22);
+            if (shuttle.TargetXMeters is double targetX && shuttle.TargetYMeters is double targetY)
+            {
+                double tx = MetersToX(plot, snapshot, targetX, cellW, segmentGapPx);
+                double ty = MetersToY(plot, snapshot, targetY, cellH, levelGapPx);
+                if (Math.Abs(tx - cx) + Math.Abs(ty - cy) > 4)
+                {
+                    Color path = shuttle.Id == ShuttleId.Shuttle1 ? Color.Parse("#4C8DFF") : Color.Parse("#F0A202");
+                    context.DrawLine(new Pen(Brush(path), 2), new Point(cx, cy), new Point(tx, ty));
+                    context.DrawEllipse(Brush(path), null, new Point(tx, ty), 5, 5);
+                }
+            }
+
+            double w = Math.Clamp(cellW * 3.2, 22, 44);
+            double h = Math.Clamp(cellH * 0.55, 16, 28);
             var body = new Rect(cx - w / 2, cy - h / 2, w, h);
             Color color = shuttle.Id == ShuttleId.Shuttle1 ? Color.Parse("#4C8DFF") : Color.Parse("#F0A202");
             context.DrawRectangle(Brush(color), new Pen(Brush(Color.Parse("#F7FBFF")), 1.4), body, 4, 4);
@@ -193,6 +206,23 @@ public sealed class WarehouseCanvas : Control
             e.Handled = true;
             return;
         }
+    }
+
+    protected override void OnPointerMoved(PointerEventArgs e)
+    {
+        var point = e.GetPosition(this);
+        foreach (var hit in _hits)
+        {
+            if (!hit.Rect.Contains(point))
+            {
+                continue;
+            }
+
+            ToolTip.SetTip(this, hit.Tip);
+            return;
+        }
+
+        ToolTip.SetTip(this, null);
     }
 
     private static double SegmentX(Rect plot, int segment, int shaftsPerLevel, double cellW, double segmentGapPx) =>

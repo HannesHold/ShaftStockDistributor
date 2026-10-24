@@ -41,6 +41,7 @@ public static class UiText
     public static string PalletsPerHour => S();
     public static string TotalPallets => S();
     public static string Offered => S();
+    public static string TheoreticalCapacity => S();
     public static string Utilization => S();
     public static string Shuttle1 => S();
     public static string Shuttle2 => S();

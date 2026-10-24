@@ -12,6 +12,9 @@ public sealed class SimulationOptions
 
     /// <summary>Null keeps the mode stored on the project.</summary>
     public AssignmentMode? Mode { get; set; }
+
+    /// <summary>Fill assigned shafts to the pull trigger so a live demo starts in motion.</summary>
+    public bool WarmStart { get; set; }
 }
 
 public sealed class SimulationResult
@@ -52,6 +55,8 @@ public sealed class SimulationResult
 
     public int HardwarePullJobs { get; init; }
 
+    public int ReassignmentCount { get; init; }
+
     public required Dictionary<string, int> LostCratesByArticle { get; init; }
 
     public required Dictionary<string, int> PullsByShaft { get; init; }
@@ -85,6 +90,8 @@ public sealed class ShaftVisual
 
     public bool Transferring { get; init; }
 
+    public bool RecentlyPulled { get; init; }
+
     public double XMeters { get; init; }
 
     public double YMeters { get; init; }
@@ -107,6 +114,10 @@ public sealed class ShuttleVisual
     public bool IsBlocked { get; init; }
 
     public bool InSharedZone { get; init; }
+
+    public double? TargetXMeters { get; init; }
+
+    public double? TargetYMeters { get; init; }
 }
 
 public sealed class JobVisual

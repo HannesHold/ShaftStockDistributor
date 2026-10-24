@@ -6,9 +6,21 @@ namespace ShaftStockDistributor.Simulation;
 public sealed class SaturationSettings
 {
     /// <summary>Zero or less disables the offered-versus-achieved rule.</summary>
-    public double AchievedRatio { get; set; } = 0.98;
+    public double AchievedRatio { get; set; } = 0.90;
 
     public bool TreatLostCratesAsSaturation { get; set; } = true;
+
+    /// <summary>
+    /// When measured hours and the load are known, losses count only above this fraction of inflow.
+    /// A handful of crates in a long window does not mark saturation.
+    /// </summary>
+    public double LostFractionOfInflow { get; set; } = 0.02;
+
+    /// <summary>Used when the loss fraction cannot be computed. Zero treats any loss as saturation.</summary>
+    public double LostCratesPerHour { get; set; } = 3;
+
+    /// <summary>The knee requires this many saturated loads in a row, through the end of the sweep.</summary>
+    public int ConsecutivePoints { get; set; } = 2;
 
     /// <summary>Null disables the utilization rule.</summary>
     public double? UtilizationCeiling { get; set; }
@@ -16,19 +28,19 @@ public sealed class SaturationSettings
 
 public sealed class StudyRequest
 {
-    public double MinCratesPerHour { get; set; } = 600;
+    public double MinCratesPerHour { get; set; } = 300;
 
-    public double MaxCratesPerHour { get; set; } = 4200;
+    public double MaxCratesPerHour { get; set; } = 4000;
 
-    public double StepCratesPerHour { get; set; } = 600;
+    public double StepCratesPerHour { get; set; } = 500;
 
-    public int Replications { get; set; } = 2;
+    public int Replications { get; set; } = 3;
 
     public int BaseSeed { get; set; } = 1;
 
-    public double DurationHours { get; set; } = 1;
+    public double DurationHours { get; set; } = 2.5;
 
-    public double WarmupHours { get; set; } = 0.1;
+    public double WarmupHours { get; set; } = 1;
 
     public bool ReoptimizePerScenario { get; set; } = true;
 
@@ -77,6 +89,8 @@ public sealed class StudyPoint
     public int OverflowingShafts { get; init; }
 
     public int LostCrates { get; init; }
+
+    public double MeasuredHours { get; init; }
 }
 
 public sealed class ScenarioSaturation
@@ -101,6 +115,8 @@ public sealed class StudyResult
     public required IReadOnlyList<StudyPoint> Means { get; init; }
 
     public required IReadOnlyList<ScenarioSaturation> Saturations { get; init; }
+
+    public double TheoreticalPalletsPerHour { get; init; }
 }
 
 public static class SaturationDetector
@@ -140,7 +156,7 @@ public static class SaturationDetector
                 }
             }
 
-            if (rest)
+            if (rest && saturated.Length - start >= Math.Max(1, settings.ConsecutivePoints))
             {
                 index = start;
                 break;
@@ -173,14 +189,15 @@ public static class SaturationDetector
 
     public static bool IsSaturated(StudyPoint point, SaturationSettings settings)
     {
-        if (settings.AchievedRatio > 0
-            && point.OfferedPalletsPerHour > 1e-6
-            && point.AchievedPalletsPerHour < settings.AchievedRatio * point.OfferedPalletsPerHour)
+        bool ratioMiss = RatioMiss(point, settings);
+        if (ratioMiss)
         {
             return true;
         }
 
-        if (settings.TreatLostCratesAsSaturation && point.LostCrates > 0)
+        // Losses alone mark a knee only when the offered-versus-achieved rule is turned off.
+        // Otherwise a few lost crates while throughput still tracks offered are not saturation.
+        if (settings.AchievedRatio <= 0 && LossesCount(point, settings))
         {
             return true;
         }
@@ -196,16 +213,16 @@ public static class SaturationDetector
     public static string Explain(StudyPoint point, SaturationSettings settings)
     {
         var reasons = new List<string>();
-        if (settings.AchievedRatio > 0
-            && point.OfferedPalletsPerHour > 1e-6
-            && point.AchievedPalletsPerHour < settings.AchievedRatio * point.OfferedPalletsPerHour)
+        if (RatioMiss(point, settings))
         {
             reasons.Add($"achieved throughput is below {settings.AchievedRatio:P0} of offered");
         }
 
-        if (settings.TreatLostCratesAsSaturation && point.LostCrates > 0)
+        if (LossesCount(point, settings))
         {
-            reasons.Add("crates were lost");
+            reasons.Add(settings.LostFractionOfInflow > 0 && point.MeasuredHours > 1e-9 && point.LoadCratesPerHour > 1e-9
+                ? $"lost crates exceed {settings.LostFractionOfInflow:P0} of inflow"
+                : $"lost crates exceed {Math.Max(0, settings.LostCratesPerHour):0.#} per hour");
         }
 
         if (settings.UtilizationCeiling is double ceiling && (point.Utilization1 > ceiling || point.Utilization2 > ceiling))
@@ -216,6 +233,27 @@ public static class SaturationDetector
         return reasons.Count == 0
             ? "The load is still inside the sustainable range."
             : "Saturation: " + string.Join("; ", reasons) + ".";
+    }
+
+    private static bool RatioMiss(StudyPoint point, SaturationSettings settings) =>
+        settings.AchievedRatio > 0
+        && point.OfferedPalletsPerHour > 1e-6
+        && point.AchievedPalletsPerHour < settings.AchievedRatio * point.OfferedPalletsPerHour;
+
+    private static bool LossesCount(StudyPoint point, SaturationSettings settings)
+    {
+        if (!settings.TreatLostCratesAsSaturation || point.LostCrates <= 0)
+        {
+            return false;
+        }
+
+        if (settings.LostFractionOfInflow > 0 && point.MeasuredHours > 1e-9 && point.LoadCratesPerHour > 1e-9)
+        {
+            double fraction = point.LostCrates / (point.LoadCratesPerHour * point.MeasuredHours);
+            return fraction > settings.LostFractionOfInflow;
+        }
+
+        return point.LostCrates > Math.Max(0, settings.LostCratesPerHour) + 1e-9;
     }
 }
 
@@ -261,7 +299,7 @@ public static class ScenarioStudyRunner
                 assigned.AssignmentMode = mode;
                 if (request.ReoptimizePerScenario)
                 {
-                    assigned.Optimizer.Seed = request.BaseSeed + scenarioIndex * 17 + (mode == AssignmentMode.Automatic ? 3 : 0);
+                    assigned.Optimizer.Seed = request.BaseSeed + scenarioIndex * 17;
                     var optimized = AnnealingOptimizer.Run(
                         assigned,
                         progress: null,
@@ -307,7 +345,8 @@ public static class ScenarioStudyRunner
                             MaxPullWaitSeconds = result.MaxPullWaitSeconds,
                             BlockedSeconds = result.BlockedSeconds,
                             OverflowingShafts = result.OverflowingShafts,
-                            LostCrates = result.LostCrates
+                            LostCrates = result.LostCrates,
+                            MeasuredHours = result.MeasuredSeconds / 3600.0
                         });
                         completed++;
                         progress?.Report(new StudyProgress
@@ -339,7 +378,8 @@ public static class ScenarioStudyRunner
                 MaxPullWaitSeconds = group.Max(point => point.MaxPullWaitSeconds),
                 BlockedSeconds = group.Average(point => point.BlockedSeconds),
                 OverflowingShafts = (int)Math.Round(group.Average(point => point.OverflowingShafts)),
-                LostCrates = (int)Math.Round(group.Average(point => (double)point.LostCrates))
+                LostCrates = (int)Math.Round(group.Average(point => (double)point.LostCrates)),
+                MeasuredHours = group.Average(point => point.MeasuredHours)
             })
             .ToList();
 
@@ -356,7 +396,8 @@ public static class ScenarioStudyRunner
         {
             Points = points,
             Means = means,
-            Saturations = saturations
+            Saturations = saturations,
+            TheoreticalPalletsPerHour = TheoreticalThroughput.PalletsPerHour(project)
         };
     }
 

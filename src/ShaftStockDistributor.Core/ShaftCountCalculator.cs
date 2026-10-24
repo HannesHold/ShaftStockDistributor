@@ -1,4 +1,4 @@
-namespace ShaftStockDistributor.Optimizer;
+namespace ShaftStockDistributor.Core;
 
 /// <summary>
 /// How many shafts an article needs so crates that arrive during a pull wait still fit.

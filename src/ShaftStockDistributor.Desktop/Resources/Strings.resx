@@ -36,6 +36,7 @@
   <data name="PalletsPerHour" xml:space="preserve"><value>Pallets / hour</value></data>
   <data name="TotalPallets" xml:space="preserve"><value>Pallets pulled</value></data>
   <data name="Offered" xml:space="preserve"><value>Offered</value></data>
+  <data name="TheoreticalCapacity" xml:space="preserve"><value>Theoretical capacity</value></data>
   <data name="Utilization" xml:space="preserve"><value>Utilization</value></data>
   <data name="Shuttle1" xml:space="preserve"><value>Shuttle 1</value></data>
   <data name="Shuttle2" xml:space="preserve"><value>Shuttle 2</value></data>

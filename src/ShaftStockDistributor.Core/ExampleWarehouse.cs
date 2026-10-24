@@ -73,6 +73,7 @@ public static class ExampleWarehouse
         ProjectGrid.EnsureDefaultShuttles(project);
         ProjectGrid.EnsureFullGrid(project);
         InflowAllocator.Apply(project, project.Scenarios[0]);
+        AssignmentPlan.RememberInflows(project);
         return project;
     }
 

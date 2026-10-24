@@ -89,6 +89,8 @@ time = max(horizontal time, vertical time)
 
 Home defaults: shuttle 1 at X = 0, level 1; shuttle 2 at the far end of the aisle, level 1. Handover defaults to the same pose. The optimizer costs a pull as a round trip from **home**, plus the transfer duration (default 12 s), because the real handover pose is unknown. Charging travel back to a different handover would move the "short" shafts and could make level 1 less special. Until that pose is known, the desktop does not add a return-to-handover leg after a pull. The shuttle stays at the shaft it just served, which is also what the simulation does.
 
+The example aisle is about 52.5 m (12 segments of 9 × 0.45 m, plus 11 gaps of 0.35 m). A conservative ceiling assumes each shuttle repeats the mean trip from its home to a shaft it may serve, then spends the 12 s transfer, and that each pull is one pallet. On the example speeds that ceiling is about **100 pallets/h** for the pair. Real trips are often shaft-to-shaft, and a pull discharges the whole shaft, so measured pallets/h can sit above the line. The study chart draws it as a horizontal reference. At the example 1800 crates/h the shuttles are near 32% utilization, well under that ceiling.
+
 ## Cost and the search
 
 Simulated annealing starts from the constructive assignment and never changes a pinned shaft. A move either swaps two unpinned shafts or moves an article onto an empty unpinned shaft. The project itself is not mutated until the caller accepts the result.
@@ -125,32 +127,31 @@ Blocked time is counted separately from utilization. Utilization is travel plus 
 The mode is stored on the project.
 
 - **Manual** uses the stored assignment, including pins and later edits. Empty shafts stay with their article.
-- **Automatic** starts from that assignment. At runtime it may point an **empty** shaft at the article that currently needs capacity most (observed inflow over the window, fill of the other shafts, ABC class). Pinned shafts never move. A shaft that still holds crates never changes article. A switch has to score at least 25% better than the current article (hysteresis), then the shaft waits 180 s, and the aisle allows at most 24 reassignments per hour.
+- **Automatic** starts from that assignment and remembers how many shafts each article was given, and the inflow that plan was sized for. It does nothing until the observation window (default 10 min) has a rate estimate. An empty unpinned shaft can move only when its article is clearly below that planned inflow, its other shafts are not packed, and it still has more shafts than the observed rate needs. The shaft is offered to an article that is short of the shaft-count formula, already losing crates, or sitting above about 72% full. A new score has to beat the current one by the hysteresis (default 25%). The shaft then waits 180 s, and the aisle allows at most 24 reassignments per hour. Pinned shafts never move. A shaft that still holds crates never changes article.
 
 The mode switch asks for confirmation in the desktop window and does not change the project until you confirm. Pins set in the live view are kept across the switch.
 
-Automatic is a correction for inflow that drifts away from the plan. On the example hour it is not a better plan than the optimizer. With the optimized assignment frozen (manual), one seeded hour at the example 1800 crates/h pulled **42.4 pallets/h** (offered 52.8, 6 lost crates, both shuttles working). The same hour in automatic mode pulled **21.7 pallets/h** and lost 390 crates: empty shafts were retargeted toward whichever article looked fullest, and the fast movers lost the parallel shafts the planner had given them. Use automatic when the live mix is moving. Use manual when you want the study to measure the plan you just optimized.
+Automatic is a correction for a mix that drifts away from the plan. It is not a second optimizer. On the planned example split (seed 1, 2.5 h, first hour excluded) it makes **no** reassignments, so the result matches manual: **55.1 pallets/h** against 52.8 offered, 8 lost crates, both shuttles near 32% utilization. The same optimized shafts with the inflow moved to 25/35/40, without a new plan, pull **68.9 pallets/h** and lose 71 crates in automatic mode, against **66.8 pallets/h** and 82 lost crates when the assignment is frozen. An earlier one-hour run with only 0.1 h of warm-up reported 42 pallets/h and, under the old policy, 21.7 pallets/h with 390 lost crates. That policy scored an empty shaft by how full its neighbors looked, so a pull handed a reserved shaft to another article. The 42-versus-53 gap was the shafts still filling up to the pull trigger, not the shuttle ceiling above.
 
 ## Reading the saturation chart
 
 The study sweeps total crates/h for each named scenario. ABC shares (for example 70/20/10) split that total across classes, then class weight or a per-article weight splits the class. A weight of 0 means no inflow. Shares that do not sum to 1 are scaled and reported as a warning.
 
-Each point is the mean of the replications. The chart draws achieved pallets/h as a solid line and offered pallets/h as a dashed line, one pair per scenario (and per mode, when you compare them). A red marker is the saturation load.
+Each point is the mean of the replications. The chart draws achieved pallets/h as a solid line and offered pallets/h as a dashed line, one pair per scenario (and per mode, when you compare them). A pale dashed horizontal line is the theoretical shuttle ceiling. A red marker is the saturation load.
 
-A point is saturated when any of these hold:
+Defaults are 300 to 4000 crates/h in steps of 500, 3 replications, 2.5 h duration, and 1 h warm-up. A short window with no warm-up still looks empty, because the shafts have not reached the pull trigger.
 
-- Achieved pallets/h is under 98% of offered (set the ratio to 0 to turn this off).
-- Any crate was lost (this rule can be turned off).
-- Either shuttle's utilization is above the optional ceiling (blank means off).
+A point is saturated when achieved pallets/h stays under 90% of offered (set the ratio to 0 to turn this off), or when either shuttle's utilization is above the optional ceiling. Lost crates count on their own only when the ratio rule is off. With the ratio rule on, a loss above 2% of inflow is named in the reason once throughput has already fallen off; a handful of crates while the curve still tracks offered does not set the knee. The knee is the first load where that point and every later point are saturated, and at least two points in a row are required. Max sustainable throughput is the achieved pallets/h of the previous point.
 
-Saturation is the first load where that point **and every later point** are saturated. Max sustainable throughput is the achieved pallets/h of the previous point, or 0 when the first point is already saturated.
+On the committed example sweep (`samples/example-study.csv`, both modes, re-optimized once per scenario):
 
-On the example warehouse the strict rules fire at the first load (600 crates/h) for every scenario in the committed sample sweep. Two things cause that, and both are visible in `samples/example-study.csv`:
+| Scenario | Saturation | Sustainable pallets/h |
+| --- | --- | --- |
+| EXAMPLE balanced 70/20/10 | not reached by 4000 crates/h | 113.8 (still tracking offered) |
+| EXAMPLE fast movers 85/10/5 | not reached by 4000 crates/h | 107.8 (still tracking offered) |
+| EXAMPLE even mix 40/35/25 | 1800 crates/h | 43.4 |
 
-- A short measured window still includes fill-up. At 600 crates/h a shaft may not reach the pull trigger inside a 0.5 h run, so achieved pallets/h is far below offered even though nothing is wrong with the shuttles.
-- A handful of lost crates is enough to trip the lost-crate rule. The longer 2 h run with a 1 h warm-up (not committed; rerun with `--hours 2 --warmup 1`) still loses a few crates at 600/h, so the detector still reports sustainable throughput 0.
-
-Read the curves, not only the marker. With the optimized assignment held fixed and a 1 h warm-up, manual mode on **EXAMPLE balanced 70/20/10** stays near the offered line through 2400 crates/h (about 71 achieved vs 70 offered) and is still close at 3600 (101 vs 106) while lost crates rise. **EXAMPLE fast movers 85/10/5** tracks offered through 1800 crates/h with almost no loss; the shuttles are busy with fewer, larger A pulls. **EXAMPLE even mix 40/35/25** offers more pallets per crate hour because B and C have fewer crates per pallet, and lost crates climb earlier. Automatic mode sits well below its offered line in all three, for the reason in the previous section.
+Balanced and fast-mover curves stay with offered throughput through 4000 crates/h. Utilization there is about 60–68%, under the ~100 pallets/h ceiling, and achieved pallets can exceed that ceiling because a pull is often more than one pallet. There is a dip around 800 crates/h on the balanced curve (about 20 achieved vs 23 offered) where few pulls fall inside the measured hour; the next loads recover, so it is not the knee. The even mix offers more pallets per crate, the shuttles flatten near 70 pallets/h, and the knee is 1800 crates/h. Automatic matches manual on these re-optimized plans. It is the shifted-split run in the previous section that shows automatic helping.
 
 Recommended use of the splits: 70/20/10 when the catalog really is a few fast movers plus a long tail; 85/10/5 when almost all volume is A and you want to see whether the exclusive zones are enough; 40/35/25 when the mix is flat and middle-aisle traffic will dominate. Re-optimize once per scenario (the study does this by default) because the shaft counts depend on the split. Re-optimizing at every load point would hide the capacity limit of a single assignment; leave that off unless you are asking a different question.
 

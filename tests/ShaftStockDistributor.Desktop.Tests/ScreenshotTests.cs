@@ -30,11 +30,13 @@ public sealed class ScreenshotTests
         await shell.StartDemoCommand.ExecuteAsync(null);
         shell.Live.PauseCommand.Execute(null);
         shell.Live.ResetPlaybackCommand.Execute(null);
-        for (int step = 0; step < 48; step++)
+        for (int step = 0; step < 24; step++)
         {
-            shell.Live.AdvanceSeconds(90);
+            shell.Live.AdvanceSeconds(45);
             var snapshot = shell.Live.Snapshot;
-            if (snapshot is not null && snapshot.Shuttles.Any(shuttle => shuttle.Phase is "Traveling" or "Transferring" or "Waiting"))
+            bool moving = snapshot?.Shuttles.Any(shuttle => shuttle.Phase is "Traveling" or "Transferring" or "Waiting") == true;
+            bool charted = shell.Live.PalletHistory.Any(value => value > 0.05);
+            if (moving && charted && snapshot!.Kpis.Pallets > 0)
             {
                 break;
             }
@@ -42,21 +44,17 @@ public sealed class ScreenshotTests
 
         var live = shell.Live.Snapshot;
         Assert.NotNull(live);
-        Assert.Contains(live.Shafts, shaft => shaft.VisualFill > 0);
+        Assert.Contains(live.Shafts, shaft => shaft.VisualFill > 0.2);
+        Assert.Contains(live.Shuttles, shuttle => shuttle.Phase is "Traveling" or "Transferring" or "Waiting");
+        Assert.Contains(shell.Live.PalletHistory, value => value > 0.05);
+        Assert.NotEqual("0.0", shell.Live.PalletsPerHourText);
         await SettleAsync();
         var liveFrame = Save(window, "live-demo.png");
         Assert.True(liveFrame.PixelSize.Width >= 1200, "The live window should render at the desktop size.");
         Assert.True(UniqueColors(liveFrame) > 12, "The live demo frame should show the rack, not a flat fill.");
 
         shell.ShowPageCommand.Execute("Study");
-        shell.Study.MinLoad = 900;
-        shell.Study.MaxLoad = 2700;
-        shell.Study.StepLoad = 900;
-        shell.Study.Replications = 1;
-        shell.Study.DurationHours = 0.2;
-        shell.Study.WarmupHours = 0;
-        shell.Study.Reoptimize = false;
-        shell.Study.CompareModes = false;
+        shell.Study.Iterations = 40;
         await shell.Study.RunCommand.ExecuteAsync(null);
         Assert.NotEmpty(shell.Study.Rows);
         Assert.NotEmpty(shell.Study.Saturations);

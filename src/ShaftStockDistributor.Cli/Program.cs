@@ -65,8 +65,8 @@ public static class Program
     private static int Simulate(string[] args)
     {
         var project = Load(args);
-        double hours = Parse(Value(args, "--hours"), 1);
-        double warmup = Parse(Value(args, "--warmup"), 0.1);
+        double hours = Parse(Value(args, "--hours"), 2.5);
+        double warmup = Parse(Value(args, "--warmup"), 1);
         int seed = (int)Parse(Value(args, "--seed"), 1);
         var mode = Enum.TryParse<AssignmentMode>(Value(args, "--mode"), true, out var parsed) ? parsed : project.AssignmentMode;
         var result = SimulationSession.Run(project, new SimulationOptions
@@ -90,8 +90,8 @@ public static class Program
             StepCratesPerHour = Parse(Value(args, "--step"), project.Study.StepCratesPerHour),
             Replications = (int)Parse(Value(args, "--reps"), project.Study.Replications),
             BaseSeed = (int)Parse(Value(args, "--seed"), project.Study.BaseSeed),
-            DurationHours = Parse(Value(args, "--hours"), 0.5),
-            WarmupHours = Parse(Value(args, "--warmup"), 0.05),
+            DurationHours = Parse(Value(args, "--hours"), project.Study.DurationHours),
+            WarmupHours = Parse(Value(args, "--warmup"), project.Study.WarmupHours),
             ReoptimizePerScenario = !args.Contains("--no-optimize"),
             CompareAssignmentModes = args.Contains("--compare-modes"),
             Mode = project.AssignmentMode,
@@ -172,8 +172,8 @@ public static class Program
         Console.WriteLine("""
             shaftstock sample [--out file]
             shaftstock optimize --project file [--out file]
-            shaftstock simulate --project file [--hours 1] [--warmup 0.1] [--seed 1] [--mode Automatic|Manual]
-            shaftstock study --project file [--min 600] [--max 4200] [--step 600] [--reps 2] [--hours 0.5] [--iterations 120] [--compare-modes] [--no-optimize] [--csv file]
+            shaftstock simulate --project file [--hours 2.5] [--warmup 1] [--seed 1] [--mode Automatic|Manual]
+            shaftstock study --project file [--min 300] [--max 4000] [--step 500] [--reps 3] [--hours 2.5] [--warmup 1] [--iterations 120] [--compare-modes] [--no-optimize] [--csv file]
             """);
     }
 }

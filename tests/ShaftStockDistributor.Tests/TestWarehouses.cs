@@ -194,7 +194,7 @@ public static class TestWarehouses
                 Y = 0,
                 ArticleId = "SLOW",
                 Capacity = 30,
-                Count = 28
+                Count = 2
             },
             new()
             {

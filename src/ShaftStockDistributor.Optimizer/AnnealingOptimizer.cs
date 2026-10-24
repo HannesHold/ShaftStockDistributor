@@ -67,6 +67,7 @@ public static class AnnealingOptimizer
             });
         }
 
+        AssignmentPlan.RememberInflows(project);
         return new OptimizationResult
         {
             Assignments = best,

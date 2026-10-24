@@ -104,6 +104,21 @@ public class StudyTests
         Assert.Equal(1500, found.SaturatedAtCratesPerHour);
         Assert.Equal(19.8, found.MaxSustainablePalletsPerHour, 3);
         Assert.Contains("lost", found.Reason, StringComparison.OrdinalIgnoreCase);
+
+        var blip = new List<StudyPoint>
+        {
+            Point(500, 10, 10, 0),
+            Point(1000, 20, 12, 40),
+            Point(1500, 30, 29.5, 0)
+        };
+        var ignored = SaturationDetector.Detect("Example", AssignmentMode.Manual, blip, new SaturationSettings
+        {
+            AchievedRatio = 0.95,
+            TreatLostCratesAsSaturation = true,
+            LostCratesPerHour = 3,
+            ConsecutivePoints = 2
+        });
+        Assert.False(ignored.Found);
     }
 
     [Fact]
@@ -122,7 +137,14 @@ public class StudyTests
             ReoptimizePerScenario = false,
             CompareAssignmentModes = false,
             Mode = AssignmentMode.Manual,
-            Thresholds = new SaturationSettings { AchievedRatio = 0, TreatLostCratesAsSaturation = true }
+            Thresholds = new SaturationSettings
+            {
+                AchievedRatio = 0,
+                TreatLostCratesAsSaturation = true,
+                LostFractionOfInflow = 0,
+                LostCratesPerHour = 0,
+                ConsecutivePoints = 1
+            }
         });
 
         var saturation = Assert.Single(result.Saturations);

@@ -25,30 +25,78 @@ public class AutomaticAssignmentTests
         var (shafts, articles) = TestWarehouses.PolicyFixture();
         var filled = shafts[0];
         filled.Count = 4;
-        string? suggestion = AutomaticAssignmentPolicy.Suggest(
-            filled, shafts, articles, new OperationSettings(), AssignmentMode.Automatic, now: 100,
-            _ => 100, reassignmentsInLastHour: 0);
+        string? suggestion = Suggest(filled, shafts, articles, _ => Sample(800), now: 1000);
         Assert.Null(suggestion);
         Assert.Equal("SLOW", filled.ArticleId);
 
         var pinned = shafts[1];
         pinned.Count = 0;
         pinned.Pinned = true;
-        suggestion = AutomaticAssignmentPolicy.Suggest(
-            pinned, shafts, articles, new OperationSettings(), AssignmentMode.Automatic, now: 100,
-            id => id == "FAST" ? 500 : 1, reassignmentsInLastHour: 0);
+        suggestion = Suggest(pinned, shafts, articles, id => Sample(id == "FAST" ? 800 : 1), now: 1000);
         Assert.Null(suggestion);
     }
 
     [Fact]
-    public void Empty_unpinned_shaft_can_move_when_another_article_needs_it()
+    public void Surplus_empty_shaft_moves_only_when_the_donor_is_below_plan_and_the_target_is_short()
     {
         var (shafts, articles) = TestWarehouses.PolicyFixture();
         var empty = shafts[1];
-        string? suggestion = AutomaticAssignmentPolicy.Suggest(
-            empty, shafts, articles, new OperationSettings { Hysteresis = 0.25 }, AssignmentMode.Automatic, now: 100,
-            id => id == "FAST" ? 800 : 1, reassignmentsInLastHour: 0);
+        string? suggestion = Suggest(
+            empty,
+            shafts,
+            articles,
+            id => Sample(id == "FAST" ? 800 : 1),
+            now: 1000,
+            planned: new Dictionary<string, int>(StringComparer.Ordinal) { ["SLOW"] = 2, ["FAST"] = 0 });
         Assert.Equal("FAST", suggestion);
+    }
+
+    [Fact]
+    public void On_plan_shaft_is_kept_even_when_another_article_is_busier()
+    {
+        var (shafts, articles) = TestWarehouses.PolicyFixture();
+        string? suggestion = Suggest(
+            shafts[1],
+            shafts,
+            articles,
+            id => Sample(id == "FAST" ? 800 : 10),
+            now: 1000,
+            planned: new Dictionary<string, int>(StringComparer.Ordinal) { ["SLOW"] = 2, ["FAST"] = 0 });
+        Assert.Null(suggestion);
+        Assert.Equal("SLOW", shafts[1].ArticleId);
+    }
+
+    [Fact]
+    public void Packed_siblings_keep_a_just_emptied_shaft()
+    {
+        var (shafts, articles) = TestWarehouses.PolicyFixture();
+        shafts[0].Count = 28;
+        string? suggestion = Suggest(
+            shafts[1],
+            shafts,
+            articles,
+            id => Sample(id == "FAST" ? 800 : 1),
+            now: 1000);
+        Assert.Null(suggestion);
+    }
+
+    [Fact]
+    public void Reassignment_waits_for_the_observation_window()
+    {
+        var (shafts, articles) = TestWarehouses.PolicyFixture();
+        var settings = new OperationSettings { ObservationWindowSeconds = 600, Hysteresis = 0.25 };
+        string? suggestion = AutomaticAssignmentPolicy.Suggest(
+            shafts[1],
+            shafts,
+            articles,
+            settings,
+            AssignmentMode.Automatic,
+            now: 100,
+            id => Sample(id == "FAST" ? 800 : 1),
+            reassignmentsInLastHour: 0,
+            Planned(),
+            Recommend);
+        Assert.Null(suggestion);
     }
 
     [Fact]
@@ -56,10 +104,50 @@ public class AutomaticAssignmentTests
     {
         var (shafts, articles) = TestWarehouses.PolicyFixture();
         string? suggestion = AutomaticAssignmentPolicy.Suggest(
-            shafts[1], shafts, articles, new OperationSettings(), AssignmentMode.Manual, now: 100,
-            id => 800, reassignmentsInLastHour: 0);
+            shafts[1],
+            shafts,
+            articles,
+            new OperationSettings { ObservationWindowSeconds = 0 },
+            AssignmentMode.Manual,
+            now: 100,
+            id => Sample(800),
+            reassignmentsInLastHour: 0,
+            Planned(),
+            Recommend);
         Assert.Null(suggestion);
     }
+
+    private static string? Suggest(
+        ShaftRuntime shaft,
+        List<ShaftRuntime> shafts,
+        Dictionary<string, ArticleRuntime> articles,
+        Func<string, FlowSample> observed,
+        double now,
+        Dictionary<string, int>? planned = null) =>
+        AutomaticAssignmentPolicy.Suggest(
+            shaft,
+            shafts,
+            articles,
+            new OperationSettings { ObservationWindowSeconds = 0, Hysteresis = 0.25 },
+            AssignmentMode.Automatic,
+            now,
+            observed,
+            reassignmentsInLastHour: 0,
+            planned ?? Planned(),
+            Recommend);
+
+    private static Dictionary<string, int> Planned() =>
+        new(StringComparer.Ordinal) { ["SLOW"] = 2, ["FAST"] = 0 };
+
+    private static FlowSample Sample(double rate)
+    {
+        const double elapsed = 3600;
+        int samples = (int)Math.Round(Math.Max(0, rate) * elapsed / 3600.0);
+        return new FlowSample(rate, samples, elapsed);
+    }
+
+    private static int Recommend(Article article, double rate) =>
+        ShaftCountCalculator.Recommend(rate, article.CratesPerPallet, article.Offset, 50, 90);
 }
 
 public class ControllerTests
