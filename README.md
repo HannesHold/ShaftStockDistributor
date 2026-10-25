@@ -1,8 +1,8 @@
 # Shaft Stock Distributor
 
-Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the shuttles that pull those shafts. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
+Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the shuttles that pull those shafts. Concept and software by Hannes Hold. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
 
-The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia.
+The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia. The window title is “Shaft Stock Distributor — Concept and software by Hannes Hold”. The application icon is the HH mark.
 
 All copy in the app, the sample, the logs, and these docs is English.
 
@@ -25,6 +25,10 @@ The aisle itself:
 The Layout page edits the rack and a shuttle table: segment from/to, speed (default 0.3 m/s), and home. Add or remove shuttles (one up to the segment count), apply an even split, or restore the two-shuttle thirds preset. The rack paints each shuttle's exclusive segments and the shared overlaps. The operation page shows the pull queue, the event log, and every shuttle's state. Switching manual and automatic assignment asks for confirmation first.
 
 ## Screenshots
+
+The desktop window title is “Shaft Stock Distributor — Concept and software by Hannes Hold”. The HH mark is the application icon and the header mark.
+
+![Window title and HH mark](docs/screenshots/window-chrome.png)
 
 Headless Skia captures of the main window. `live-demo.png` is the two-shuttle aisle at 1280×800 after the shuttles have started to move. `live-demo-wide.png` is the same view at 1920×1080. `shuttles-zones.png` is the Layout page with the shuttle table. `live-demo-four-shuttles.png` is the same aisle after an even split into four shuttles. `article-generator.png` is the Articles page with the generator asking before a replace.
 

@@ -4,6 +4,7 @@
              xmlns:conv="using:ShaftStockDistributor.Desktop.Converters"
              xmlns:fluent="using:Avalonia.Themes.Fluent"
              x:Class="ShaftStockDistributor.Desktop.App"
+             Name="ShaftStockDistributor"
              RequestedThemeVariant="Dark">
   <Application.Resources>
     <conv:InvariantNumberConverter x:Key="InvariantNumber" />

@@ -22,6 +22,9 @@ public sealed class ScreenshotTests
         var shell = host.Services.GetRequiredService<ShellViewModel>();
         var window = new MainWindow { DataContext = shell };
         window.Show();
+        Assert.Equal(UiText.WindowTitle, window.Title);
+        Assert.Contains("Hannes Hold", window.Title, StringComparison.Ordinal);
+        Assert.NotNull(window.Icon);
         await Resize(window, 1280, 800);
 
         await shell.StartDemoCommand.ExecuteAsync(null);

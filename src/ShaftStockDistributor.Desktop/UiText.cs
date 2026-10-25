@@ -10,6 +10,7 @@ public static class UiText
         typeof(UiText).Assembly);
 
     public static string AppTitle => S();
+    public static string WindowTitle => S();
     public static string Tagline => S();
     public static string ExampleBadge => S();
     public static string NavLive => S();
