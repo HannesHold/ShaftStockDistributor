@@ -17,6 +17,7 @@ public static class AppServices
         services.AddSingleton<IUiClock, AvaloniaUiClock>();
         services.AddSingleton<IOptimizerService, OptimizerService>();
         services.AddSingleton<IStudyService, StudyService>();
+        services.AddSingleton<ConfigurationLock>();
         services.AddSingleton<LiveDemoViewModel>();
         services.AddSingleton<LayoutEditorViewModel>();
         services.AddSingleton<ArticlesViewModel>();

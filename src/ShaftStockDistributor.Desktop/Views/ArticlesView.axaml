@@ -14,6 +14,8 @@
         <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
       </StackPanel>
 
+      <Border Background="Transparent" ToolTip.Tip="{Binding Lock.Hint}">
+      <StackPanel Spacing="12" IsEnabled="{Binding Lock.CanMutate}">
       <Border Classes="card" Padding="12">
         <StackPanel Spacing="8">
           <TextBlock Text="{x:Static local:UiText.GeneratorTitle}" FontWeight="SemiBold" />
@@ -60,7 +62,11 @@
           <dg:DataGridTextColumn Header="Id" Binding="{Binding Id}" Width="170" IsReadOnly="True" />
           <dg:DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" MinWidth="160" IsReadOnly="True" />
           <dg:DataGridTextColumn Header="Class" Binding="{Binding Class}" Width="80" IsReadOnly="True" />
-          <dg:DataGridTextColumn Header="Inflow" Binding="{Binding InflowCratesPerHour, Mode=TwoWay}" Width="110" IsReadOnly="False" />
+          <dg:DataGridTextColumn Header="Inflow"
+                                 Width="150"
+                                 MinWidth="130"
+                                 IsReadOnly="False"
+                                 Binding="{Binding InflowCratesPerHour, Mode=TwoWay, Converter={StaticResource InvariantNumber}, ConverterParameter=0.##}" />
           <dg:DataGridTextColumn Header="Pallet" Binding="{Binding CratesPerPallet}" Width="90" IsReadOnly="True" />
           <dg:DataGridTextColumn Header="Offset" Binding="{Binding Offset}" Width="90" IsReadOnly="True" />
         </dg:DataGrid.Columns>
@@ -120,6 +126,8 @@
           </WrapPanel>
           <Button x:Name="ArticleApplyButton" Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Click="CommitArticleGrid" Command="{Binding ApplyDraftCommand}" />
         </StackPanel>
+      </Border>
+      </StackPanel>
       </Border>
     </StackPanel>
   </ScrollViewer>

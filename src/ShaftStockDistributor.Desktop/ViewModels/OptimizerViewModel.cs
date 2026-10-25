@@ -10,14 +10,19 @@ public partial class OptimizerViewModel : ObservableObject
 {
     private readonly IMessenger _messenger;
     private readonly IOptimizerService _optimizer;
+    private readonly ConfigurationLock _lock;
     private DistributorProject? _project;
 
-    public OptimizerViewModel(IMessenger messenger, IOptimizerService optimizer)
+    public OptimizerViewModel(IMessenger messenger, IOptimizerService optimizer, ConfigurationLock configurationLock)
     {
         _messenger = messenger;
         _optimizer = optimizer;
+        _lock = configurationLock;
         messenger.Register<ProjectChangedMessage>(this, (_, message) => _project = message.Project);
+        _lock.PropertyChanged += (_, _) => RunCommand.NotifyCanExecuteChanged();
     }
+
+    public ConfigurationLock Lock => _lock;
 
     [ObservableProperty] private int _iterations = 400;
     [ObservableProperty] private double _expectedWait = 90;
@@ -33,7 +38,11 @@ public partial class OptimizerViewModel : ObservableObject
     [ObservableProperty] private string _changedText = "0";
     [ObservableProperty] private string _status = "";
 
-    [RelayCommand(IncludeCancelCommand = true)]
+    partial void OnIsBusyChanged(bool value) => RunCommand.NotifyCanExecuteChanged();
+
+    private bool CanRun() => !IsBusy && _lock.CanMutate;
+
+    [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanRun))]
     private async Task RunAsync(CancellationToken cancellationToken)
     {
         if (_project is null)

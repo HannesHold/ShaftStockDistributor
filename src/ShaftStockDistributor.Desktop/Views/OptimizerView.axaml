@@ -7,7 +7,8 @@
   <StackPanel Spacing="14" MaxWidth="920">
     <TextBlock Text="{x:Static local:UiText.OptimizerTitle}" Classes="h1" />
     <TextBlock Text="{Binding Status}" Classes="muted" />
-    <Border Classes="card">
+    <Border Background="Transparent" ToolTip.Tip="{Binding Lock.Hint}">
+    <Border Classes="card" IsEnabled="{Binding Lock.CanMutate}">
       <StackPanel Spacing="10">
         <WrapPanel>
           <StackPanel Width="160" Margin="0,0,12,8">
@@ -39,11 +40,12 @@
           </StackPanel>
         </WrapPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button Classes="accent" Content="{x:Static local:UiText.RunOptimizer}" Command="{Binding RunCommand}" IsEnabled="{Binding !IsBusy}" />
+          <Button Classes="accent" Content="{x:Static local:UiText.RunOptimizer}" Command="{Binding RunCommand}" />
           <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" IsVisible="{Binding IsBusy}" />
         </StackPanel>
         <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsBusy}" Height="6" />
       </StackPanel>
+    </Border>
     </Border>
     <Border Classes="card">
       <StackPanel Spacing="8">

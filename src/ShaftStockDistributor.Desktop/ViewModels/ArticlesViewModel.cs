@@ -97,13 +97,27 @@ public partial class ArticleDraft : ObservableValidator
 public partial class ArticlesViewModel : ObservableObject
 {
     private readonly IMessenger _messenger;
+    private readonly ConfigurationLock _lock;
     private DistributorProject? _project;
 
-    public ArticlesViewModel(IMessenger messenger)
+    public ArticlesViewModel(IMessenger messenger, ConfigurationLock configurationLock)
     {
         _messenger = messenger;
+        _lock = configurationLock;
         messenger.Register<ProjectChangedMessage>(this, (_, message) => Load(message.Project));
+        _lock.PropertyChanged += (_, _) =>
+        {
+            AddCommand.NotifyCanExecuteChanged();
+            RemoveCommand.NotifyCanExecuteChanged();
+            ApplyDraftCommand.NotifyCanExecuteChanged();
+            RequestGenerateCommand.NotifyCanExecuteChanged();
+            ConfirmGenerateCommand.NotifyCanExecuteChanged();
+        };
     }
+
+    public ConfigurationLock Lock => _lock;
+
+    private bool CanMutate() => _lock.CanMutate;
 
     public ObservableCollection<Article> Rows { get; } = new();
 
@@ -131,7 +145,7 @@ public partial class ArticlesViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void Add()
     {
         if (_project is null)
@@ -151,7 +165,7 @@ public partial class ArticlesViewModel : ObservableObject
         Publish();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void Remove()
     {
         if (_project is null || Selected is null)
@@ -171,7 +185,7 @@ public partial class ArticlesViewModel : ObservableObject
         Publish();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void ApplyDraft()
     {
         if (Selected is null)
@@ -202,7 +216,7 @@ public partial class ArticlesViewModel : ObservableObject
         Publish();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void RequestGenerate()
     {
         if (!TryCreateRequest(out var request))
@@ -221,7 +235,7 @@ public partial class ArticlesViewModel : ObservableObject
         CommitGenerate(request);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void ConfirmGenerate()
     {
         ReplaceConfirmationVisible = false;

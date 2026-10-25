@@ -144,6 +144,93 @@ public sealed class ViewModelTests
     }
 
     [Fact]
+    public async Task Toolbar_stop_continue_and_reset_follow_the_run_and_keep_the_project()
+    {
+        var clock = new ManualClock();
+        var shell = Harness.CreateShell(clock, new FakeOptimizer());
+        var project = shell.Project;
+        shell.Project.Articles[0].Name = "Custom returnable crate";
+        shell.Layout.SegmentCount = 8;
+        shell.Layout.ApplyCommand.Execute(null);
+
+        Assert.False(shell.IsConfigurationLocked);
+        Assert.True(shell.StartDemoCommand.CanExecute(null));
+        Assert.False(shell.StopSimulationCommand.CanExecute(null));
+        Assert.False(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.False(shell.ResetSimulationCommand.CanExecute(null));
+        Assert.True(shell.Layout.ApplyCommand.CanExecute(null));
+        Assert.True(shell.Articles.ApplyDraftCommand.CanExecute(null));
+        Assert.True(shell.Articles.RequestGenerateCommand.CanExecute(null));
+
+        await shell.StartDemoCommand.ExecuteAsync(null);
+        for (int tick = 0; tick < 40 && shell.Live.TimeText == "00:00:00"; tick++)
+        {
+            clock.Pulse();
+        }
+
+        string pausedAt = shell.Live.TimeText;
+        Assert.NotEqual("00:00:00", pausedAt);
+        Assert.True(shell.Live.IsRunning);
+        Assert.True(shell.IsConfigurationLocked);
+        Assert.True(shell.StopSimulationCommand.CanExecute(null));
+        Assert.False(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.True(shell.ResetSimulationCommand.CanExecute(null));
+        Assert.False(shell.Layout.ApplyCommand.CanExecute(null));
+        Assert.False(shell.Articles.ApplyDraftCommand.CanExecute(null));
+        Assert.False(shell.Articles.RequestGenerateCommand.CanExecute(null));
+        Assert.False(shell.NewProjectCommand.CanExecute(null));
+        Assert.False(shell.LoadExampleCommand.CanExecute(null));
+
+        shell.StopSimulationCommand.Execute(null);
+        clock.Pulse();
+        Assert.False(shell.Live.IsRunning);
+        Assert.Equal(pausedAt, shell.Live.TimeText);
+        Assert.True(shell.IsConfigurationLocked);
+        Assert.False(shell.StopSimulationCommand.CanExecute(null));
+        Assert.False(shell.Live.PauseCommand.CanExecute(null));
+        Assert.True(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.True(shell.Live.ContinueCommand.CanExecute(null));
+        Assert.Equal(UiText.SimulationStopped, shell.Status);
+        Assert.Equal(UiText.SimulationStopped, shell.Live.Status);
+        Assert.False(shell.Layout.ApplyCommand.CanExecute(null));
+        Assert.False(shell.Articles.ApplyDraftCommand.CanExecute(null));
+        Assert.False(shell.Articles.RequestGenerateCommand.CanExecute(null));
+
+        shell.ContinueSimulationCommand.Execute(null);
+        Assert.True(shell.Live.IsRunning);
+        Assert.Equal(pausedAt, shell.Live.TimeText);
+        Assert.Equal(UiText.SimulationContinued, shell.Status);
+        clock.Pulse();
+        Assert.NotEqual(pausedAt, shell.Live.TimeText);
+
+        shell.Live.PauseCommand.Execute(null);
+        Assert.True(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.False(shell.StopSimulationCommand.CanExecute(null));
+
+        shell.ResetSimulationCommand.Execute(null);
+        Assert.Same(project, shell.Project);
+        Assert.Equal(8, project.Layout.SegmentCount);
+        Assert.Equal("Custom returnable crate", project.Articles[0].Name);
+        Assert.Equal(ExampleWarehouse.ProjectName, project.Name);
+        Assert.False(shell.Live.IsRunning);
+        Assert.Equal("00:00:00", shell.Live.TimeText);
+        Assert.Equal(UiText.PlaybackReset, shell.Status);
+        Assert.False(shell.IsConfigurationLocked);
+        Assert.False(shell.StopSimulationCommand.CanExecute(null));
+        Assert.False(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.False(shell.ResetSimulationCommand.CanExecute(null));
+        Assert.True(shell.StartDemoCommand.CanExecute(null));
+        Assert.True(shell.Layout.ApplyCommand.CanExecute(null));
+        Assert.True(shell.Articles.ApplyDraftCommand.CanExecute(null));
+        Assert.True(shell.Articles.RequestGenerateCommand.CanExecute(null));
+        Assert.True(shell.NewProjectCommand.CanExecute(null));
+
+        shell.Layout.SegmentCount = 7;
+        shell.Layout.ApplyCommand.Execute(null);
+        Assert.Equal(7, project.Layout.SegmentCount);
+    }
+
+    [Fact]
     public async Task Optimizer_view_model_records_before_and_after_cost()
     {
         var shell = Harness.CreateShell(optimizer: new FakeOptimizer());
@@ -483,14 +570,15 @@ public sealed class ViewModelTests
             var messenger = new WeakReferenceMessenger();
             var store = new JsonProjectStore();
             var dialogs = new FakeDialogs();
+            var configurationLock = new ConfigurationLock();
             optimizer ??= new OptimizerService();
             var live = new LiveDemoViewModel(messenger, clock ?? new ManualClock(), optimizer);
-            var layout = new LayoutEditorViewModel(messenger);
-            var articles = new ArticlesViewModel(messenger);
-            var optimizerView = new OptimizerViewModel(messenger, optimizer);
-            var study = new StudyViewModel(messenger, new StudyService(), dialogs);
+            var layout = new LayoutEditorViewModel(messenger, configurationLock);
+            var articles = new ArticlesViewModel(messenger, configurationLock);
+            var optimizerView = new OptimizerViewModel(messenger, optimizer, configurationLock);
+            var study = new StudyViewModel(messenger, new StudyService(), dialogs, configurationLock);
             var operation = new OperationViewModel(messenger);
-            return new ShellViewModel(live, layout, articles, optimizerView, study, operation, messenger, store, dialogs);
+            return new ShellViewModel(live, layout, articles, optimizerView, study, operation, messenger, store, dialogs, configurationLock);
         }
     }
 }

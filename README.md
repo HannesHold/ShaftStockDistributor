@@ -19,7 +19,7 @@ The aisle itself:
 - Shafts fill in the article color. A pull drains the shaft.
 - Shuttles move with the acceleration profile, horizontally and between levels at the same time.
 - Shared overlaps lock, and a shuttle that has to wait is drawn with a WAIT marker. Every shuttle on the aisle is animated.
-- Playback is play, pause, step, and reset, from 1x to 400x.
+- Playback is play, pause, step, and reset on the Live demo page, from 1x to 400x. The header adds Run simulation, Stop, Continue, and Reset simulation beside each other. Stop pauses, Continue resumes the same run, and Reset returns to the start without loading the example. While a run is going or paused, the layout, articles, zones, optimizer, and other project edits stay locked until you reset.
 - The live dashboard shows pallets per hour, offered pallets per hour, utilization, pull wait, blocked time, and lost crates.
 
 The Layout page edits the rack and a shuttle table: segment from/to, speed (default 0.3 m/s), and home. Add or remove shuttles (one up to the segment count), apply an even split, or restore the two-shuttle thirds preset. The rack paints each shuttle's exclusive segments and the shared overlaps. The operation page shows the pull queue, the event log, and every shuttle's state. Switching manual and automatic assignment asks for confirmation first.

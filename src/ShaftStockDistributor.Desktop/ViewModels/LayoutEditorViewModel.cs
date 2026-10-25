@@ -81,13 +81,27 @@ public partial class ShuttleDraft : ObservableValidator
 public partial class LayoutEditorViewModel : ObservableValidator
 {
     private readonly IMessenger _messenger;
+    private readonly ConfigurationLock _lock;
     private DistributorProject? _project;
 
-    public LayoutEditorViewModel(IMessenger messenger)
+    public LayoutEditorViewModel(IMessenger messenger, ConfigurationLock configurationLock)
     {
         _messenger = messenger;
+        _lock = configurationLock;
         messenger.Register<ProjectChangedMessage>(this, (_, message) => Load(message.Project));
+        _lock.PropertyChanged += (_, _) =>
+        {
+            ApplyCommand.NotifyCanExecuteChanged();
+            AddShuttleCommand.NotifyCanExecuteChanged();
+            RemoveShuttleCommand.NotifyCanExecuteChanged();
+            EvenSplitCommand.NotifyCanExecuteChanged();
+            TwoShuttleThirdsCommand.NotifyCanExecuteChanged();
+        };
     }
+
+    public ConfigurationLock Lock => _lock;
+
+    private bool CanMutate() => _lock.CanMutate;
 
     public ObservableCollection<ShuttleDraft> Shuttles { get; } = new();
 
@@ -125,7 +139,7 @@ public partial class LayoutEditorViewModel : ObservableValidator
     [ObservableProperty] private double _safety = 1.5;
     [ObservableProperty] private string _status = "";
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void Apply()
     {
         ValidateAllProperties();
@@ -162,10 +176,10 @@ public partial class LayoutEditorViewModel : ObservableValidator
         _messenger.Send(new ProjectChangedMessage { Project = _project });
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void AddShuttle() => Refit(Shuttles.Count + 1, even: true);
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void RemoveShuttle()
     {
         if (Shuttles.Count <= 1)
@@ -177,10 +191,10 @@ public partial class LayoutEditorViewModel : ObservableValidator
         Refit(Shuttles.Count - 1, even: true);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void EvenSplit() => Refit(Math.Max(1, Shuttles.Count), even: true);
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void TwoShuttleThirds()
     {
         var probe = DraftProject();

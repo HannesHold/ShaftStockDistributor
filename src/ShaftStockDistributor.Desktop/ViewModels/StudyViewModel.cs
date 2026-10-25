@@ -50,17 +50,28 @@ public partial class StudyViewModel : ObservableObject
     private readonly IMessenger _messenger;
     private readonly IStudyService _study;
     private readonly IFileDialogs _dialogs;
+    private readonly ConfigurationLock _lock;
     private DistributorProject? _project;
 
-    public StudyViewModel(IMessenger messenger, IStudyService study, IFileDialogs dialogs)
+    public StudyViewModel(IMessenger messenger, IStudyService study, IFileDialogs dialogs, ConfigurationLock configurationLock)
     {
         _messenger = messenger;
         _study = study;
         _dialogs = dialogs;
+        _lock = configurationLock;
         StudyXAxes = new[] { DarkAxis(UiText.Inflow) };
         StudyYAxes = new[] { DarkAxis(UiText.PalletsPerHour) };
         messenger.Register<ProjectChangedMessage>(this, (_, message) => Load(message.Project));
+        _lock.PropertyChanged += (_, _) =>
+        {
+            AddScenarioCommand.NotifyCanExecuteChanged();
+            RemoveScenarioCommand.NotifyCanExecuteChanged();
+        };
     }
+
+    public ConfigurationLock Lock => _lock;
+
+    private bool CanMutate() => _lock.CanMutate;
 
     public ObservableCollection<InflowScenario> Scenarios { get; } = new();
 
@@ -99,7 +110,7 @@ public partial class StudyViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void AddScenario()
     {
         if (_project is null)
@@ -113,7 +124,7 @@ public partial class StudyViewModel : ObservableObject
         SelectedScenario = scenario;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanMutate))]
     private void RemoveScenario()
     {
         if (_project is null || SelectedScenario is null)

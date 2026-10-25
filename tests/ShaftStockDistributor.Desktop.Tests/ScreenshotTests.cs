@@ -110,6 +110,13 @@ public sealed class ScreenshotTests
         }
 
         Assert.Equal(4, shell.Live.Snapshot?.Shuttles.Count);
+        shell.Live.PlayCommand.Execute(null);
+        shell.Live.PauseCommand.Execute(null);
+        Assert.True(shell.IsConfigurationLocked);
+        Assert.False(shell.StopSimulationCommand.CanExecute(null));
+        Assert.True(shell.ContinueSimulationCommand.CanExecute(null));
+        Assert.True(shell.ResetSimulationCommand.CanExecute(null));
+        Assert.False(shell.Layout.ApplyCommand.CanExecute(null));
         await SettleAsync();
         Save(window, "live-demo-four-shuttles.png", 1280);
     }

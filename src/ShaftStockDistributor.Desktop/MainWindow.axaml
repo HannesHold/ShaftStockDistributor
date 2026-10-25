@@ -23,8 +23,14 @@
           </StackPanel>
           <TextBlock Text="{x:Static local:UiText.Tagline}" Classes="muted" TextWrapping="Wrap" />
           <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock Text="{x:Static local:UiText.ConfigurationLocked}"
+                     IsVisible="{Binding IsConfigurationLocked}"
+                     TextWrapping="Wrap"
+                     Foreground="#E7C27A"
+                     FontSize="12"
+                     ToolTip.Tip="{x:Static local:UiText.ConfigurationLocked}" />
         </StackPanel>
-        <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="980">
+        <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="760">
           <Button Content="{x:Static local:UiText.New}" Command="{Binding NewProjectCommand}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.Open}" Command="{Binding OpenProjectCommand}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.Save}" Command="{Binding SaveProjectCommand}" Margin="0,0,8,4" />
@@ -32,7 +38,12 @@
           <Button Content="{x:Static local:UiText.ExportJson}" Command="{Binding ExportJsonCommand}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.ExportCsv}" Command="{Binding ExportCsvCommand}" Margin="0,0,8,4" />
           <Button Content="{Binding ModeText}" Command="{Binding RequestModeChangeCommand}" Margin="0,0,8,4" />
-          <Button Classes="accent" Content="{x:Static local:UiText.StartDemo}" Command="{Binding StartDemoCommand}" IsEnabled="{Binding !Live.IsBusy}" Margin="0,0,0,4" />
+          <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
+            <Button Classes="accent" Content="{x:Static local:UiText.StartDemo}" Command="{Binding StartDemoCommand}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.StopSimulation}" Command="{Binding StopSimulationCommand}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.ContinueSimulation}" Command="{Binding ContinueSimulationCommand}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.ResetSimulation}" Command="{Binding ResetSimulationCommand}" />
+          </StackPanel>
         </WrapPanel>
       </Grid>
     </Border>

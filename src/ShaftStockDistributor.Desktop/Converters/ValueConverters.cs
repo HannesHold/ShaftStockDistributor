@@ -7,15 +7,23 @@ namespace ShaftStockDistributor.Desktop.Converters;
 /// <summary>Invariant-culture bridge so numeric fields stay compiled bindings.</summary>
 public sealed class InvariantNumberConverter : IValueConverter
 {
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value switch
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        string format = parameter as string ?? "";
+        if (string.IsNullOrWhiteSpace(format))
+        {
+            format = "0.###";
+        }
+
+        return value switch
         {
             null => "",
-            double number => number.ToString("0.###", CultureInfo.InvariantCulture),
-            float number => number.ToString("0.###", CultureInfo.InvariantCulture),
+            double number => number.ToString(format, CultureInfo.InvariantCulture),
+            float number => number.ToString(format, CultureInfo.InvariantCulture),
             IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
             _ => value.ToString()
         };
+    }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {

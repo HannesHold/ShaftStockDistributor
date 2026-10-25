@@ -10,6 +10,13 @@ using ShaftStockDistributor.Simulation;
 
 namespace ShaftStockDistributor.Desktop.ViewModels;
 
+public enum PlaybackPhase
+{
+    Idle,
+    Running,
+    Paused
+}
+
 public partial class LiveDemoViewModel : ObservableObject
 {
     private readonly IMessenger _messenger;
@@ -39,7 +46,10 @@ public partial class LiveDemoViewModel : ObservableObject
 
     public ObservableCollection<LegendItem> Legend { get; } = new();
 
+    public ObservableCollection<UtilizationChip> UtilizationChips { get; } = new();
+
     [ObservableProperty] private WarehouseSnapshot? _snapshot;
+    [ObservableProperty] private PlaybackPhase _phase = PlaybackPhase.Idle;
     [ObservableProperty] private bool _isRunning;
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private double _speed = 30;
@@ -113,21 +123,41 @@ public partial class LiveDemoViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void Play()
+    public bool IsConfigurationLocked => Phase is PlaybackPhase.Running or PlaybackPhase.Paused;
+
+    partial void OnPhaseChanged(PlaybackPhase value)
     {
-        EnsureSession();
-        IsRunning = true;
-        Status = UiText.StatusReady;
+        bool running = value == PlaybackPhase.Running;
+        if (IsRunning != running)
+        {
+            IsRunning = running;
+        }
+
+        OnPropertyChanged(nameof(IsConfigurationLocked));
+        PauseCommand.NotifyCanExecuteChanged();
+        ContinueCommand.NotifyCanExecuteChanged();
+        ResetPlaybackCommand.NotifyCanExecuteChanged();
+        ApplyShaftCommand.NotifyCanExecuteChanged();
+        ApplyScenarioCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand]
-    private void Pause() => IsRunning = false;
+    private void Play() => StartRunning(Phase == PlaybackPhase.Paused ? UiText.SimulationContinued : UiText.StatusReady);
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanContinue))]
+    private void Continue() => StartRunning(UiText.SimulationContinued);
+
+    [RelayCommand(CanExecute = nameof(CanPause))]
+    private void Pause()
+    {
+        SetPhase(PlaybackPhase.Paused);
+        Status = UiText.SimulationStopped;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanResetPlayback))]
     private void ResetPlayback()
     {
-        IsRunning = false;
+        SetPhase(PlaybackPhase.Idle);
         RestartSession();
         Status = UiText.PlaybackReset;
     }
@@ -135,17 +165,34 @@ public partial class LiveDemoViewModel : ObservableObject
     [RelayCommand]
     private void Step()
     {
-        IsRunning = false;
         EnsureSession();
         if (_session is null)
         {
             return;
         }
 
+        SetPhase(PlaybackPhase.Paused);
         double next = _session.NextEventTime ?? (_session.Now + 1);
         _session.AdvanceTo(Math.Max(_session.Now, next));
         Publish();
     }
+
+    private void StartRunning(string status)
+    {
+        EnsureSession();
+        SetPhase(PlaybackPhase.Running);
+        Status = status;
+    }
+
+    private void SetPhase(PlaybackPhase phase) => Phase = phase;
+
+    private bool CanContinue() => Phase == PlaybackPhase.Paused;
+
+    private bool CanPause() => Phase == PlaybackPhase.Running;
+
+    private bool CanResetPlayback() => Phase != PlaybackPhase.Idle;
+
+    private bool CanEditConfiguration() => !IsConfigurationLocked;
 
     [RelayCommand]
     private void SelectShaft(ShaftAddress address)
@@ -162,7 +209,7 @@ public partial class LiveDemoViewModel : ObservableObject
         SelectedSummary = $"{address} · {count}/{capacity}";
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditConfiguration))]
     private void ApplyShaft()
     {
         if (_selected is not ShaftAddress address || _project is null)
@@ -199,7 +246,7 @@ public partial class LiveDemoViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditConfiguration))]
     private void ApplyScenario()
     {
         if (_project is null || SelectedScenario is null)
@@ -214,7 +261,7 @@ public partial class LiveDemoViewModel : ObservableObject
         }
 
         InflowAllocator.Apply(_project, scenario);
-        IsRunning = false;
+        SetPhase(PlaybackPhase.Idle);
         RestartSession();
         Status = UiText.PlaybackReset;
     }
@@ -253,7 +300,7 @@ public partial class LiveDemoViewModel : ObservableObject
         Publish();
         if (_session.Now >= HorizonSeconds)
         {
-            IsRunning = false;
+            SetPhase(PlaybackPhase.Paused);
         }
     }
 
@@ -275,7 +322,7 @@ public partial class LiveDemoViewModel : ObservableObject
             ArticleChoices.Add(new ArticleChoice { Id = article.Id, Name = article.Name });
         }
 
-        IsRunning = false;
+        SetPhase(PlaybackPhase.Idle);
         RestartSession();
     }
 
@@ -393,9 +440,11 @@ public partial class LiveDemoViewModel : ObservableObject
 
         Util1Text = kpis.Utilization1.ToString("P0", CultureInfo.InvariantCulture);
         Util2Text = kpis.Utilization2.ToString("P0", CultureInfo.InvariantCulture);
-        UtilizationText = kpis.Shuttles.Count == 0
-            ? $"1 {Util1Text} · 2 {Util2Text}"
-            : string.Join(" · ", kpis.Shuttles.Select(shuttle => $"{shuttle.Id.Number} {shuttle.Utilization.ToString("P0", CultureInfo.InvariantCulture)}"));
+        string[] chips = kpis.Shuttles.Count == 0
+            ? [$"1:{Util1Text}", $"2:{Util2Text}"]
+            : kpis.Shuttles.Select(shuttle => $"{shuttle.Id.Number}:{shuttle.Utilization.ToString("P0", CultureInfo.InvariantCulture)}").ToArray();
+        UtilizationText = string.Join("  ", chips);
+        SetUtilizationChips(chips);
         WaitText = $"{kpis.AveragePullWaitSeconds:0} s";
         BlockedText = $"{kpis.BlockedSeconds:0} s";
         LostText = kpis.LostCrates.ToString(CultureInfo.InvariantCulture);
@@ -405,6 +454,33 @@ public partial class LiveDemoViewModel : ObservableObject
         if (_session is not null)
         {
             TimeText = TimeSpan.FromSeconds(Math.Max(0, _session.Now)).ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture);
+        }
+    }
+
+    private void SetUtilizationChips(IReadOnlyList<string> chips)
+    {
+        if (UtilizationChips.Count == chips.Count)
+        {
+            bool same = true;
+            for (int index = 0; index < chips.Count; index++)
+            {
+                if (!string.Equals(UtilizationChips[index].Text, chips[index], StringComparison.Ordinal))
+                {
+                    same = false;
+                    break;
+                }
+            }
+
+            if (same)
+            {
+                return;
+            }
+        }
+
+        UtilizationChips.Clear();
+        foreach (string text in chips)
+        {
+            UtilizationChips.Add(new UtilizationChip { Text = text });
         }
     }
 
@@ -447,4 +523,9 @@ public sealed class LegendItem
     public required string Name { get; init; }
 
     public required string ColorHex { get; init; }
+}
+
+public sealed class UtilizationChip
+{
+    public required string Text { get; init; }
 }

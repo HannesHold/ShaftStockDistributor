@@ -9,6 +9,8 @@
     <StackPanel Spacing="12" MaxWidth="1080">
       <TextBlock Text="{x:Static local:UiText.LayoutTitle}" Classes="h1" />
       <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
+      <Border Background="Transparent" ToolTip.Tip="{Binding Lock.Hint}">
+      <StackPanel Spacing="12" IsEnabled="{Binding Lock.CanMutate}">
       <Border Classes="card">
         <StackPanel Spacing="8">
           <TextBlock Text="{x:Static local:UiText.ShuttlesZones}" Classes="section" />
@@ -19,18 +21,55 @@
                        CanUserReorderColumns="False"
                        CanUserSortColumns="False"
                        GridLinesVisibility="Horizontal"
-                       Height="148"
-                       MinHeight="120">
+                       HorizontalScrollBarVisibility="Auto"
+                       Height="168"
+                       MinHeight="140">
             <dg:DataGrid.Columns>
-              <dg:DataGridTextColumn Header="Shuttle" Binding="{Binding Title}" IsReadOnly="True" Width="90" />
-              <dg:DataGridTextColumn Header="From" Binding="{Binding SegmentFrom, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="70" />
-              <dg:DataGridTextColumn Header="To" Binding="{Binding SegmentTo, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="70" />
-              <dg:DataGridTextColumn Header="H speed" Binding="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="80" />
-              <dg:DataGridTextColumn Header="V speed" Binding="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="80" />
-              <dg:DataGridTextColumn Header="H accel" Binding="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="80" />
-              <dg:DataGridTextColumn Header="V accel" Binding="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="80" />
-              <dg:DataGridTextColumn Header="Home X" Binding="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="90" />
-              <dg:DataGridTextColumn Header="Home level" Binding="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="90" />
+              <dg:DataGridTextColumn Binding="{Binding Title}" IsReadOnly="True" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="Shuttle" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding SegmentFrom, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="84" MinWidth="84">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="From" ToolTip.Tip="First segment this shuttle serves" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding SegmentTo, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="72" MinWidth="72">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="To" ToolTip.Tip="Last segment this shuttle serves" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding HorizontalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="H speed" ToolTip.Tip="Horizontal speed (m/s)" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding VerticalSpeed, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="V speed" ToolTip.Tip="Vertical speed (m/s)" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding HorizontalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="H accel" ToolTip.Tip="Horizontal acceleration (m/s²)" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding VerticalAcceleration, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="V accel" ToolTip.Tip="Vertical acceleration (m/s²)" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding HomeX, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="110" MinWidth="110">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="Home X" ToolTip.Tip="Home position along the aisle (m)" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
+              <dg:DataGridTextColumn Binding="{Binding HomeLevel, Mode=TwoWay, Converter={StaticResource InvariantNumber}}" Width="120" MinWidth="120">
+                <dg:DataGridTextColumn.Header>
+                  <TextBlock Text="Home level" ToolTip.Tip="Home level" />
+                </dg:DataGridTextColumn.Header>
+              </dg:DataGridTextColumn>
             </dg:DataGrid.Columns>
           </dg:DataGrid>
           <WrapPanel>
@@ -97,6 +136,8 @@
         </StackPanel>
       </Border>
       <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyLayout}" Command="{Binding ApplyCommand}" Click="CommitShuttleGrid" />
+      </StackPanel>
+      </Border>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

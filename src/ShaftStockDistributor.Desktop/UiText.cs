@@ -24,6 +24,12 @@ public static class UiText
     public static string ExportJson => S();
     public static string ExportCsv => S();
     public static string StartDemo => S();
+    public static string StopSimulation => S();
+    public static string ContinueSimulation => S();
+    public static string ResetSimulation => S();
+    public static string SimulationStopped => S();
+    public static string SimulationContinued => S();
+    public static string ConfigurationLocked => S();
     public static string LoadExample => S();
     public static string LoadExampleTitle => S();
     public static string LoadExampleBody => S();

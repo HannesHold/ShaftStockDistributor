@@ -19,6 +19,12 @@
   <data name="ExportJson" xml:space="preserve"><value>Export JSON</value></data>
   <data name="ExportCsv" xml:space="preserve"><value>Export CSV</value></data>
   <data name="StartDemo" xml:space="preserve"><value>Run simulation</value></data>
+  <data name="StopSimulation" xml:space="preserve"><value>Stop</value></data>
+  <data name="ContinueSimulation" xml:space="preserve"><value>Continue</value></data>
+  <data name="ResetSimulation" xml:space="preserve"><value>Reset simulation</value></data>
+  <data name="SimulationStopped" xml:space="preserve"><value>Simulation stopped.</value></data>
+  <data name="SimulationContinued" xml:space="preserve"><value>Simulation continued.</value></data>
+  <data name="ConfigurationLocked" xml:space="preserve"><value>Stop or reset the simulation to edit the configuration.</value></data>
   <data name="LoadExample" xml:space="preserve"><value>Load example</value></data>
   <data name="LoadExampleTitle" xml:space="preserve"><value>Load the example project?</value></data>
   <data name="LoadExampleBody" xml:space="preserve"><value>The current project has unsaved changes. Loading the example warehouse replaces the layout, articles, and assignment.</value></data>
