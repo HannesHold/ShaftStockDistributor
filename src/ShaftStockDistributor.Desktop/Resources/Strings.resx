@@ -5,7 +5,7 @@
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="AppTitle" xml:space="preserve"><value>Shaft Stock Distributor</value></data>
-  <data name="WindowTitle" xml:space="preserve"><value>Shaft Stock Distributor — Concept and software by Hannes Hold</value></data>
+  <data name="WindowTitle" xml:space="preserve"><value>Shaft Stock Distributor — by Hannes Hold</value></data>
   <data name="Tagline" xml:space="preserve"><value>Plan, simulate, and control returnable-crate shafts</value></data>
   <data name="ExampleBadge" xml:space="preserve"><value>EXAMPLE DATA</value></data>
   <data name="NavLive" xml:space="preserve"><value>Live demo</value></data>

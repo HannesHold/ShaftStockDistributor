@@ -1,8 +1,8 @@
 # Shaft Stock Distributor
 
-Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the shuttles that pull those shafts. Concept and software by Hannes Hold. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
+Shaft Stock Distributor plans which returnable-crate article belongs in which shaft of a flow-rack aisle, then simulates the shuttles that pull those shafts. By Hannes Hold. The same operations core drives the animated demo and the scenario study, and it is the surface a future PLC adapter would call.
 
-The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia. The window title is “Shaft Stock Distributor — Concept and software by Hannes Hold”. The application icon is the HH mark.
+The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia. The window title is “Shaft Stock Distributor — by Hannes Hold”. The application icon is the HH mark.
 
 All copy in the app, the sample, the logs, and these docs is English.
 
@@ -26,7 +26,7 @@ The Layout page edits the rack and a shuttle table: segment from/to, speed (defa
 
 ## Screenshots
 
-The desktop window title is “Shaft Stock Distributor — Concept and software by Hannes Hold”. The HH mark is the application icon and the header mark.
+The desktop window title is “Shaft Stock Distributor — by Hannes Hold”. The HH mark is the application icon and the header mark.
 
 ![Window title and HH mark](docs/screenshots/window-chrome.png)
 
