@@ -9,8 +9,8 @@
     <StackPanel Spacing="12">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <TextBlock Text="{x:Static local:UiText.ArticlesTitle}" Classes="h1" VerticalAlignment="Center" />
-        <Button Content="{x:Static local:UiText.AddArticle}" Command="{Binding AddCommand}" />
-        <Button Content="{x:Static local:UiText.RemoveArticle}" Command="{Binding RemoveCommand}" />
+        <Button Content="{x:Static local:UiText.AddArticle}" Command="{Binding AddCommand}" ToolTip.Tip="{x:Static local:UiText.TipAddArticle}" />
+        <Button Content="{x:Static local:UiText.RemoveArticle}" Command="{Binding RemoveCommand}" ToolTip.Tip="{x:Static local:UiText.TipRemoveArticle}" />
         <TextBlock Text="{Binding Status}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" />
       </StackPanel>
 
@@ -41,8 +41,8 @@
               <TextBlock Text="{x:Static local:UiText.OptionalSeed}" Classes="field" />
               <TextBox Text="{Binding SeedText, Mode=TwoWay}" />
             </StackPanel>
-            <CheckBox Content="{x:Static local:UiText.ReplaceExisting}" IsChecked="{Binding ReplaceExisting}" VerticalAlignment="Bottom" Margin="0,0,10,12" />
-            <Button Classes="accent" Content="{x:Static local:UiText.Generate}" Command="{Binding RequestGenerateCommand}" VerticalAlignment="Bottom" Margin="0,0,0,8" />
+            <CheckBox Content="{x:Static local:UiText.ReplaceExisting}" IsChecked="{Binding ReplaceExisting}" ToolTip.Tip="{x:Static local:UiText.TipReplaceExisting}" VerticalAlignment="Bottom" Margin="0,0,10,12" />
+            <Button Classes="accent" Content="{x:Static local:UiText.Generate}" Command="{Binding RequestGenerateCommand}" ToolTip.Tip="{x:Static local:UiText.TipGenerate}" VerticalAlignment="Bottom" Margin="0,0,0,8" />
           </WrapPanel>
           <Border Background="#3A2A12" Padding="10" CornerRadius="8" IsVisible="{Binding ReplaceConfirmationVisible}">
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
@@ -50,8 +50,8 @@
                 <TextBlock Text="{x:Static local:UiText.GeneratorReplaceTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
                 <TextBlock Text="{x:Static local:UiText.GeneratorReplaceBody}" Classes="muted" TextWrapping="Wrap" />
               </StackPanel>
-              <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.ReplaceArticles}" Command="{Binding ConfirmGenerateCommand}" VerticalAlignment="Center" />
-              <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelGenerateCommand}" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.ReplaceArticles}" Command="{Binding ConfirmGenerateCommand}" ToolTip.Tip="{x:Static local:UiText.TipReplaceArticles}" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelGenerateCommand}" ToolTip.Tip="{x:Static local:UiText.TipCancelGenerate}" VerticalAlignment="Center" />
             </Grid>
           </Border>
         </StackPanel>
@@ -124,7 +124,7 @@
               <TextBox Text="{Binding Draft.Color, Mode=TwoWay}" />
             </StackPanel>
           </WrapPanel>
-          <Button x:Name="ArticleApplyButton" Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Click="CommitArticleGrid" Command="{Binding ApplyDraftCommand}" />
+          <Button x:Name="ArticleApplyButton" Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Click="CommitArticleGrid" Command="{Binding ApplyDraftCommand}" ToolTip.Tip="{x:Static local:UiText.TipApplyArticle}" />
         </StackPanel>
       </Border>
       </StackPanel>

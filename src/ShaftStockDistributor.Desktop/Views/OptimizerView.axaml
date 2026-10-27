@@ -40,8 +40,8 @@
           </StackPanel>
         </WrapPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
-          <Button Classes="accent" Content="{x:Static local:UiText.RunOptimizer}" Command="{Binding RunCommand}" />
-          <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" IsVisible="{Binding IsBusy}" />
+          <Button Classes="accent" Content="{x:Static local:UiText.RunOptimizer}" Command="{Binding RunCommand}" ToolTip.Tip="{x:Static local:UiText.TipRunOptimizer}" />
+          <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" ToolTip.Tip="{x:Static local:UiText.TipCancelOptimizer}" IsVisible="{Binding IsBusy}" />
         </StackPanel>
         <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsBusy}" Height="6" />
       </StackPanel>

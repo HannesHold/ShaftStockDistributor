@@ -73,10 +73,10 @@
             </dg:DataGrid.Columns>
           </dg:DataGrid>
           <WrapPanel>
-            <Button Content="{x:Static local:UiText.AddShuttle}" Command="{Binding AddShuttleCommand}" Margin="0,0,8,6" />
-            <Button Content="{x:Static local:UiText.RemoveShuttle}" Command="{Binding RemoveShuttleCommand}" Margin="0,0,8,6" />
-            <Button Content="{x:Static local:UiText.EvenSplit}" Command="{Binding EvenSplitCommand}" Margin="0,0,8,6" />
-            <Button Content="{x:Static local:UiText.TwoShuttlePreset}" Command="{Binding TwoShuttleThirdsCommand}" Margin="0,0,8,6" />
+            <Button Content="{x:Static local:UiText.AddShuttle}" Command="{Binding AddShuttleCommand}" ToolTip.Tip="{x:Static local:UiText.TipAddShuttle}" Margin="0,0,8,6" />
+            <Button Content="{x:Static local:UiText.RemoveShuttle}" Command="{Binding RemoveShuttleCommand}" ToolTip.Tip="{x:Static local:UiText.TipRemoveShuttle}" Margin="0,0,8,6" />
+            <Button Content="{x:Static local:UiText.EvenSplit}" Command="{Binding EvenSplitCommand}" ToolTip.Tip="{x:Static local:UiText.TipEvenSplit}" Margin="0,0,8,6" />
+            <Button Content="{x:Static local:UiText.TwoShuttlePreset}" Command="{Binding TwoShuttleThirdsCommand}" ToolTip.Tip="{x:Static local:UiText.TipTwoShuttleThirds}" Margin="0,0,8,6" />
           </WrapPanel>
         </StackPanel>
       </Border>
@@ -135,7 +135,7 @@
           </WrapPanel>
         </StackPanel>
       </Border>
-      <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyLayout}" Command="{Binding ApplyCommand}" Click="CommitShuttleGrid" />
+      <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyLayout}" Command="{Binding ApplyCommand}" Click="CommitShuttleGrid" ToolTip.Tip="{x:Static local:UiText.TipApplyLayout}" />
       </StackPanel>
       </Border>
     </StackPanel>

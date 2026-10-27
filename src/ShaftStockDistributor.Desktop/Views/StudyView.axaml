@@ -13,9 +13,9 @@
         <TextBlock Text="{Binding Status}" Classes="muted" TextWrapping="Wrap" />
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-        <Button Classes="accent" Content="{x:Static local:UiText.RunStudy}" Command="{Binding RunCommand}" IsEnabled="{Binding !IsBusy}" />
-        <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" IsVisible="{Binding IsBusy}" />
-        <Button Content="{x:Static local:UiText.ExportResults}" Command="{Binding ExportCommand}" />
+        <Button Classes="accent" Content="{x:Static local:UiText.RunStudy}" Command="{Binding RunCommand}" ToolTip.Tip="{x:Static local:UiText.TipRunStudy}" IsEnabled="{Binding !IsBusy}" />
+        <Button Content="{x:Static local:UiText.Cancel}" Command="{Binding RunCancelCommand}" ToolTip.Tip="{x:Static local:UiText.TipCancelStudy}" IsVisible="{Binding IsBusy}" />
+        <Button Content="{x:Static local:UiText.ExportResults}" Command="{Binding ExportCommand}" ToolTip.Tip="{x:Static local:UiText.TipExportResults}" />
       </StackPanel>
     </Grid>
     <Border Grid.Row="1" Classes="card" Padding="10">
@@ -59,11 +59,11 @@
           </StackPanel>
         </WrapPanel>
         <WrapPanel>
-          <CheckBox Content="{x:Static local:UiText.Reoptimize}" IsChecked="{Binding Reoptimize}" Margin="0,0,16,6" />
-          <CheckBox Content="{x:Static local:UiText.CompareModes}" IsChecked="{Binding CompareModes}" Margin="0,0,16,6" />
-          <CheckBox Content="{x:Static local:UiText.LostRule}" IsChecked="{Binding LostRule}" Margin="0,0,16,6" />
-          <Button Content="{x:Static local:UiText.AddScenario}" Command="{Binding AddScenarioCommand}" Margin="0,0,8,6" />
-          <Button Content="{x:Static local:UiText.RemoveScenario}" Command="{Binding RemoveScenarioCommand}" Margin="0,0,8,6" />
+          <CheckBox Content="{x:Static local:UiText.Reoptimize}" IsChecked="{Binding Reoptimize}" ToolTip.Tip="{x:Static local:UiText.TipReoptimize}" Margin="0,0,16,6" />
+          <CheckBox Content="{x:Static local:UiText.CompareModes}" IsChecked="{Binding CompareModes}" ToolTip.Tip="{x:Static local:UiText.TipCompareModes}" Margin="0,0,16,6" />
+          <CheckBox Content="{x:Static local:UiText.LostRule}" IsChecked="{Binding LostRule}" ToolTip.Tip="{x:Static local:UiText.TipLostRule}" Margin="0,0,16,6" />
+          <Button Content="{x:Static local:UiText.AddScenario}" Command="{Binding AddScenarioCommand}" ToolTip.Tip="{x:Static local:UiText.TipAddScenario}" Margin="0,0,8,6" />
+          <Button Content="{x:Static local:UiText.RemoveScenario}" Command="{Binding RemoveScenarioCommand}" ToolTip.Tip="{x:Static local:UiText.TipRemoveScenario}" Margin="0,0,8,6" />
         </WrapPanel>
         <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress}" Height="6" IsVisible="{Binding IsBusy}" />
       </StackPanel>

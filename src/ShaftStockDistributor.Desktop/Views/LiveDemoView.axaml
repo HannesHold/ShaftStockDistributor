@@ -84,7 +84,8 @@
         <controls:WarehouseCanvas Snapshot="{Binding Snapshot}"
                                   ShowHeatmap="{Binding ShowHeatmap}"
                                   SelectedAddress="{Binding SelectedAddress}"
-                                  ShaftClickCommand="{Binding SelectShaftCommand}" />
+                                  ShaftClickCommand="{Binding SelectShaftCommand}"
+                                  ToolTip.Tip="{x:Static local:UiText.TipSelectShaft}" />
       </Border>
 
       <ItemsControl ItemsSource="{Binding Legend}" Margin="4,0,0,0">
@@ -108,12 +109,12 @@
           <StackPanel Spacing="8">
             <TextBlock Text="{x:Static local:UiText.Playback}" FontWeight="SemiBold" />
             <WrapPanel>
-              <Button Classes="accent" Content="{x:Static local:UiText.Play}" Command="{Binding PlayCommand}" Margin="0,0,8,6" />
-              <Button Content="{x:Static local:UiText.Pause}" Command="{Binding PauseCommand}" Margin="0,0,8,6" />
-              <Button Content="{x:Static local:UiText.Step}" Command="{Binding StepCommand}" Margin="0,0,8,6" />
-              <Button Content="{x:Static local:UiText.Reset}" Command="{Binding ResetPlaybackCommand}" Margin="0,0,8,6" />
+              <Button Classes="accent" Content="{x:Static local:UiText.Play}" Command="{Binding PlayCommand}" ToolTip.Tip="{x:Static local:UiText.TipPlay}" Margin="0,0,8,6" />
+              <Button Content="{x:Static local:UiText.Pause}" Command="{Binding PauseCommand}" ToolTip.Tip="{x:Static local:UiText.TipPause}" Margin="0,0,8,6" />
+              <Button Content="{x:Static local:UiText.Step}" Command="{Binding StepCommand}" ToolTip.Tip="{x:Static local:UiText.TipStep}" Margin="0,0,8,6" />
+              <Button Content="{x:Static local:UiText.Reset}" Command="{Binding ResetPlaybackCommand}" ToolTip.Tip="{x:Static local:UiText.TipResetPlayback}" Margin="0,0,8,6" />
             </WrapPanel>
-            <CheckBox Content="{x:Static local:UiText.Heatmap}" IsChecked="{Binding ShowHeatmap}" />
+            <CheckBox Content="{x:Static local:UiText.Heatmap}" IsChecked="{Binding ShowHeatmap}" ToolTip.Tip="{x:Static local:UiText.TipHeatmap}" />
             <TextBlock Text="{x:Static local:UiText.Speed}" Classes="field" />
             <Slider Minimum="1" Maximum="400" Value="{Binding Speed}" />
           </StackPanel>
@@ -133,7 +134,7 @@
             </Grid>
             <TextBlock Text="{x:Static local:UiText.Scenario}" Classes="field" />
             <ComboBox MinWidth="160" HorizontalAlignment="Stretch" ItemsSource="{Binding Scenarios}" SelectedItem="{Binding SelectedScenario}" IsEnabled="{Binding !IsConfigurationLocked}" />
-            <Button HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Command="{Binding ApplyScenarioCommand}" />
+            <Button HorizontalAlignment="Left" Content="{x:Static local:UiText.Apply}" Command="{Binding ApplyScenarioCommand}" ToolTip.Tip="{x:Static local:UiText.TipApplyScenario}" />
           </StackPanel>
         </Border>
         <Border Classes="card" Width="280" Margin="0,0,8,8" Padding="10" IsEnabled="{Binding !IsConfigurationLocked}">
@@ -141,8 +142,8 @@
             <TextBlock Text="{x:Static local:UiText.ShaftAssignment}" FontWeight="SemiBold" />
             <TextBlock Text="{Binding SelectedSummary}" TextWrapping="Wrap" />
             <ComboBox MinWidth="160" HorizontalAlignment="Stretch" ItemsSource="{Binding ArticleChoices}" SelectedItem="{Binding SelectedChoice}" />
-            <CheckBox Content="{x:Static local:UiText.Pin}" IsChecked="{Binding SelectedPinned}" />
-            <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyAssignment}" Command="{Binding ApplyShaftCommand}" />
+            <CheckBox Content="{x:Static local:UiText.Pin}" IsChecked="{Binding SelectedPinned}" ToolTip.Tip="{x:Static local:UiText.TipPin}" />
+            <Button Classes="accent" HorizontalAlignment="Left" Content="{x:Static local:UiText.ApplyAssignment}" Command="{Binding ApplyShaftCommand}" ToolTip.Tip="{x:Static local:UiText.TipApplyShaft}" />
           </StackPanel>
         </Border>
         <Border Classes="card" Width="340" Margin="0,0,0,8" Padding="10">

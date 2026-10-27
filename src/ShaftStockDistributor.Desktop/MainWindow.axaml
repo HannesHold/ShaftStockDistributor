@@ -33,18 +33,18 @@
                      ToolTip.Tip="{x:Static local:UiText.ConfigurationLocked}" />
         </StackPanel>
         <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="760">
-          <Button Content="{x:Static local:UiText.New}" Command="{Binding NewProjectCommand}" Margin="0,0,8,4" />
-          <Button Content="{x:Static local:UiText.Open}" Command="{Binding OpenProjectCommand}" Margin="0,0,8,4" />
-          <Button Content="{x:Static local:UiText.Save}" Command="{Binding SaveProjectCommand}" Margin="0,0,8,4" />
-          <Button Content="{x:Static local:UiText.LoadExample}" Command="{Binding LoadExampleCommand}" Margin="0,0,8,4" />
-          <Button Content="{x:Static local:UiText.ExportJson}" Command="{Binding ExportJsonCommand}" Margin="0,0,8,4" />
-          <Button Content="{x:Static local:UiText.ExportCsv}" Command="{Binding ExportCsvCommand}" Margin="0,0,8,4" />
-          <Button Content="{Binding ModeText}" Command="{Binding RequestModeChangeCommand}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.New}" Command="{Binding NewProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipNew}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.Open}" Command="{Binding OpenProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipOpen}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.Save}" Command="{Binding SaveProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipSave}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.LoadExample}" Command="{Binding LoadExampleCommand}" ToolTip.Tip="{x:Static local:UiText.TipLoadExample}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.ExportJson}" Command="{Binding ExportJsonCommand}" ToolTip.Tip="{x:Static local:UiText.TipExportJson}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.ExportCsv}" Command="{Binding ExportCsvCommand}" ToolTip.Tip="{x:Static local:UiText.TipExportCsv}" Margin="0,0,8,4" />
+          <Button Content="{Binding ModeText}" Command="{Binding RequestModeChangeCommand}" ToolTip.Tip="{x:Static local:UiText.TipMode}" Margin="0,0,8,4" />
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,4">
-            <Button Classes="accent" Content="{x:Static local:UiText.StartDemo}" Command="{Binding StartDemoCommand}" Margin="0,0,8,0" />
-            <Button Content="{x:Static local:UiText.StopSimulation}" Command="{Binding StopSimulationCommand}" Margin="0,0,8,0" />
-            <Button Content="{x:Static local:UiText.ContinueSimulation}" Command="{Binding ContinueSimulationCommand}" Margin="0,0,8,0" />
-            <Button Content="{x:Static local:UiText.ResetSimulation}" Command="{Binding ResetSimulationCommand}" />
+            <Button Classes="accent" Content="{x:Static local:UiText.StartDemo}" Command="{Binding StartDemoCommand}" ToolTip.Tip="{x:Static local:UiText.TipRunSimulation}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.StopSimulation}" Command="{Binding StopSimulationCommand}" ToolTip.Tip="{x:Static local:UiText.TipStop}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.ContinueSimulation}" Command="{Binding ContinueSimulationCommand}" ToolTip.Tip="{x:Static local:UiText.TipContinue}" Margin="0,0,8,0" />
+            <Button Content="{x:Static local:UiText.ResetSimulation}" Command="{Binding ResetSimulationCommand}" ToolTip.Tip="{x:Static local:UiText.TipResetSimulation}" />
           </StackPanel>
         </WrapPanel>
       </Grid>
@@ -57,8 +57,8 @@
             <TextBlock Text="{x:Static local:UiText.ModeConfirmTitle}" FontWeight="SemiBold" />
             <TextBlock Text="{x:Static local:UiText.ModeConfirmBody}" Classes="muted" TextWrapping="Wrap" />
           </StackPanel>
-          <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.Confirm}" Command="{Binding ConfirmModeChangeCommand}" />
-          <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelModeChangeCommand}" />
+          <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.Confirm}" Command="{Binding ConfirmModeChangeCommand}" ToolTip.Tip="{x:Static local:UiText.TipConfirmMode}" />
+          <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelModeChangeCommand}" ToolTip.Tip="{x:Static local:UiText.TipCancelMode}" />
         </Grid>
       </Border>
       <Border IsVisible="{Binding LoadExampleConfirmationVisible}" Background="#3A2A12" Padding="16,10">
@@ -67,8 +67,8 @@
             <TextBlock Text="{x:Static local:UiText.LoadExampleTitle}" FontWeight="SemiBold" />
             <TextBlock Text="{x:Static local:UiText.LoadExampleBody}" Classes="muted" TextWrapping="Wrap" />
           </StackPanel>
-          <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.LoadExampleConfirm}" Command="{Binding ConfirmLoadExampleCommand}" />
-          <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelLoadExampleCommand}" />
+          <Button Grid.Column="1" Classes="accent" Content="{x:Static local:UiText.LoadExampleConfirm}" Command="{Binding ConfirmLoadExampleCommand}" ToolTip.Tip="{x:Static local:UiText.TipConfirmLoadExample}" />
+          <Button Grid.Column="2" Content="{x:Static local:UiText.Cancel}" Command="{Binding CancelLoadExampleCommand}" ToolTip.Tip="{x:Static local:UiText.TipCancelLoadExample}" />
         </Grid>
       </Border>
     </StackPanel>
@@ -90,12 +90,12 @@
             </ScrollViewer>
           </StackPanel>
           <StackPanel Spacing="4">
-            <Button Classes="nav" Classes.selected="{Binding IsLiveSelected}" Content="{x:Static local:UiText.NavLive}" Command="{Binding ShowPageCommand}" CommandParameter="Live" />
-            <Button Classes="nav" Classes.selected="{Binding IsLayoutSelected}" Content="{x:Static local:UiText.NavLayout}" Command="{Binding ShowPageCommand}" CommandParameter="Layout" />
-            <Button Classes="nav" Classes.selected="{Binding IsArticlesSelected}" Content="{x:Static local:UiText.NavArticles}" Command="{Binding ShowPageCommand}" CommandParameter="Articles" />
-            <Button Classes="nav" Classes.selected="{Binding IsOptimizerSelected}" Content="{x:Static local:UiText.NavOptimizer}" Command="{Binding ShowPageCommand}" CommandParameter="Optimizer" />
-            <Button Classes="nav" Classes.selected="{Binding IsStudySelected}" Content="{x:Static local:UiText.NavStudy}" Command="{Binding ShowPageCommand}" CommandParameter="Study" />
-            <Button Classes="nav" Classes.selected="{Binding IsOperationSelected}" Content="{x:Static local:UiText.NavOperation}" Command="{Binding ShowPageCommand}" CommandParameter="Operation" />
+            <Button Classes="nav" Classes.selected="{Binding IsLiveSelected}" Content="{x:Static local:UiText.NavLive}" Command="{Binding ShowPageCommand}" CommandParameter="Live" ToolTip.Tip="{x:Static local:UiText.TipNavLive}" />
+            <Button Classes="nav" Classes.selected="{Binding IsLayoutSelected}" Content="{x:Static local:UiText.NavLayout}" Command="{Binding ShowPageCommand}" CommandParameter="Layout" ToolTip.Tip="{x:Static local:UiText.TipNavLayout}" />
+            <Button Classes="nav" Classes.selected="{Binding IsArticlesSelected}" Content="{x:Static local:UiText.NavArticles}" Command="{Binding ShowPageCommand}" CommandParameter="Articles" ToolTip.Tip="{x:Static local:UiText.TipNavArticles}" />
+            <Button Classes="nav" Classes.selected="{Binding IsOptimizerSelected}" Content="{x:Static local:UiText.NavOptimizer}" Command="{Binding ShowPageCommand}" CommandParameter="Optimizer" ToolTip.Tip="{x:Static local:UiText.TipNavOptimizer}" />
+            <Button Classes="nav" Classes.selected="{Binding IsStudySelected}" Content="{x:Static local:UiText.NavStudy}" Command="{Binding ShowPageCommand}" CommandParameter="Study" ToolTip.Tip="{x:Static local:UiText.TipNavStudy}" />
+            <Button Classes="nav" Classes.selected="{Binding IsOperationSelected}" Content="{x:Static local:UiText.NavOperation}" Command="{Binding ShowPageCommand}" CommandParameter="Operation" ToolTip.Tip="{x:Static local:UiText.TipNavOperation}" />
           </StackPanel>
         </DockPanel>
       </Border>

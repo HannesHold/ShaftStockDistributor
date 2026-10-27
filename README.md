@@ -4,7 +4,7 @@ Shaft Stock Distributor plans which returnable-crate article belongs in which sh
 
 The desktop app is Avalonia 11 (11.3.22) on .NET 10. Headless rendering and the chart library both work, so the UI stayed on Avalonia. The window title is “Shaft Stock Distributor — by Hannes Hold”. The application icon is the HH mark.
 
-All copy in the app, the sample, the logs, and these docs is English.
+All copy in the app, the sample, the logs, and these docs is English. Every control is described, in window order, in [the GUI reference](docs/gui-reference.md).
 
 ## What the demo shows
 

@@ -221,4 +221,56 @@
   <data name="Validation_ShuttleCoverageGap" xml:space="preserve"><value>Segment {0} is not covered by any shuttle.</value></data>
   <data name="Validation_ShuttleHomeOrder" xml:space="preserve"><value>Shuttle {0} home ({1} m) is left of shuttle {2} ({3} m). Homes must follow aisle order.</value></data>
   <data name="Validation_ShuttleHomeSpacing" xml:space="preserve"><value>Shuttle {0} and shuttle {1} homes are {2} m apart. They must stay at least {3} m apart.</value></data>
+  <data name="TipNew" xml:space="preserve"><value>Start a blank project. Disabled while a simulation is running or paused.</value></data>
+  <data name="TipOpen" xml:space="preserve"><value>Open a project file. Disabled while a simulation is running or paused.</value></data>
+  <data name="TipSave" xml:space="preserve"><value>Save the current project as JSON.</value></data>
+  <data name="TipLoadExample" xml:space="preserve"><value>Replace this project with the example warehouse. Asks first if there are unsaved changes.</value></data>
+  <data name="TipExportJson" xml:space="preserve"><value>Save the shaft assignment as JSON.</value></data>
+  <data name="TipExportCsv" xml:space="preserve"><value>Save the shaft assignment as CSV.</value></data>
+  <data name="TipMode" xml:space="preserve"><value>Ask to switch between automatic and manual assignment.</value></data>
+  <data name="TipRunSimulation" xml:space="preserve"><value>Open Live demo and play this project. Re-optimizes only if the assignment does not match the layout.</value></data>
+  <data name="TipStop" xml:space="preserve"><value>Pause the simulation. Available only while it is running.</value></data>
+  <data name="TipContinue" xml:space="preserve"><value>Resume a paused simulation from the same time.</value></data>
+  <data name="TipResetSimulation" xml:space="preserve"><value>Return playback to the start. Does not load the example.</value></data>
+  <data name="TipConfirmMode" xml:space="preserve"><value>Switch mode. Automatic may retarget empty shafts only. A filled shaft stays.</value></data>
+  <data name="TipCancelMode" xml:space="preserve"><value>Keep the current assignment mode.</value></data>
+  <data name="TipConfirmLoadExample" xml:space="preserve"><value>Discard unsaved changes and load the example warehouse.</value></data>
+  <data name="TipCancelLoadExample" xml:space="preserve"><value>Keep the current project.</value></data>
+  <data name="TipNavLive" xml:space="preserve"><value>Open the live aisle, playback, and shaft assignment.</value></data>
+  <data name="TipNavLayout" xml:space="preserve"><value>Open the rack size and shuttle zones.</value></data>
+  <data name="TipNavArticles" xml:space="preserve"><value>Open crate types and the article generator.</value></data>
+  <data name="TipNavOptimizer" xml:space="preserve"><value>Open the assignment optimizer.</value></data>
+  <data name="TipNavStudy" xml:space="preserve"><value>Open the capacity study.</value></data>
+  <data name="TipNavOperation" xml:space="preserve"><value>Open the pull queue and event log.</value></data>
+  <data name="TipPlay" xml:space="preserve"><value>Play from the current time. Continues if playback is already paused.</value></data>
+  <data name="TipPause" xml:space="preserve"><value>Pause playback. Available only while it is running.</value></data>
+  <data name="TipStep" xml:space="preserve"><value>Advance to the next event, then pause.</value></data>
+  <data name="TipResetPlayback" xml:space="preserve"><value>Return playback to time zero. Available after play has started.</value></data>
+  <data name="TipApplyScenario" xml:space="preserve"><value>Write the selected scenario onto article inflows and restart playback.</value></data>
+  <data name="TipApplyShaft" xml:space="preserve"><value>Assign the chosen article and pin to the selected shaft. A filled shaft keeps its article.</value></data>
+  <data name="TipSelectShaft" xml:space="preserve"><value>Click a shaft to select it for assignment.</value></data>
+  <data name="TipAddShuttle" xml:space="preserve"><value>Add a shuttle and split the aisle evenly. At most one shuttle per segment.</value></data>
+  <data name="TipRemoveShuttle" xml:space="preserve"><value>Remove one shuttle and split the aisle evenly. At least one shuttle stays.</value></data>
+  <data name="TipEvenSplit" xml:space="preserve"><value>Divide the segments evenly across the shuttles in the table.</value></data>
+  <data name="TipTwoShuttleThirds" xml:space="preserve"><value>Set two shuttles that share the middle third. Press Apply layout to keep it.</value></data>
+  <data name="TipApplyLayout" xml:space="preserve"><value>Save the rack and the shuttle table, then reset playback.</value></data>
+  <data name="TipAddArticle" xml:space="preserve"><value>Add a blank article and select it for editing.</value></data>
+  <data name="TipRemoveArticle" xml:space="preserve"><value>Remove the selected article and clear shafts that used it.</value></data>
+  <data name="TipGenerate" xml:space="preserve"><value>Build articles from the crate types. Asks before replacing an existing list.</value></data>
+  <data name="TipReplaceArticles" xml:space="preserve"><value>Replace the article list and clear the shaft assignment.</value></data>
+  <data name="TipCancelGenerate" xml:space="preserve"><value>Keep the current articles.</value></data>
+  <data name="TipApplyArticle" xml:space="preserve"><value>Write this form onto the selected article. A grid inflow edit is kept, and playback restarts.</value></data>
+  <data name="TipRunOptimizer" xml:space="preserve"><value>Search for a lower-cost assignment and replace the current plan.</value></data>
+  <data name="TipCancelOptimizer" xml:space="preserve"><value>Stop the search. The assignment already on the project stays.</value></data>
+  <data name="TipRunStudy" xml:space="preserve"><value>Sweep the load range and plot achieved pallets per hour.</value></data>
+  <data name="TipCancelStudy" xml:space="preserve"><value>Stop the study. Points already finished stay on the chart.</value></data>
+  <data name="TipExportResults" xml:space="preserve"><value>Save the study table as CSV. Does nothing until a study has finished.</value></data>
+  <data name="TipAddScenario" xml:space="preserve"><value>Add a scenario at 1,800 crates per hour. This page does not show a list.</value></data>
+  <data name="TipRemoveScenario" xml:space="preserve"><value>Remove the scenario you just added, or the first one if you have not added one.</value></data>
+  <data name="TipHeatmap" xml:space="preserve"><value>Color shafts by how often they have been pulled.</value></data>
+  <data name="TipPin" xml:space="preserve"><value>Keep this shaft when automatic mode retargets empty shafts.</value></data>
+  <data name="TipReplaceExisting" xml:space="preserve"><value>Ask before replacing the current article list. Off appends the new articles.</value></data>
+  <data name="TipReoptimize" xml:space="preserve"><value>Assign shafts again for each scenario and load before simulating it.</value></data>
+  <data name="TipCompareModes" xml:space="preserve"><value>Run every load in both manual and automatic assignment.</value></data>
+  <data name="TipLostRule" xml:space="preserve"><value>Treat any lost crate as saturation.</value></data>
 </root>
