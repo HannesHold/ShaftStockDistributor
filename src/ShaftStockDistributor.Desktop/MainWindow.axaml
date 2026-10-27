@@ -35,6 +35,7 @@
         <WrapPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" MaxWidth="760">
           <Button Content="{x:Static local:UiText.New}" Command="{Binding NewProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipNew}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.Open}" Command="{Binding OpenProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipOpen}" Margin="0,0,8,4" />
+          <Button Content="{x:Static local:UiText.OpenResult}" Command="{Binding OpenResultCommand}" ToolTip.Tip="{x:Static local:UiText.TipOpenResult}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.Save}" Command="{Binding SaveProjectCommand}" ToolTip.Tip="{x:Static local:UiText.TipSave}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.LoadExample}" Command="{Binding LoadExampleCommand}" ToolTip.Tip="{x:Static local:UiText.TipLoadExample}" Margin="0,0,8,4" />
           <Button Content="{x:Static local:UiText.ExportJson}" Command="{Binding ExportJsonCommand}" ToolTip.Tip="{x:Static local:UiText.TipExportJson}" Margin="0,0,8,4" />
@@ -96,6 +97,7 @@
             <Button Classes="nav" Classes.selected="{Binding IsOptimizerSelected}" Content="{x:Static local:UiText.NavOptimizer}" Command="{Binding ShowPageCommand}" CommandParameter="Optimizer" ToolTip.Tip="{x:Static local:UiText.TipNavOptimizer}" />
             <Button Classes="nav" Classes.selected="{Binding IsStudySelected}" Content="{x:Static local:UiText.NavStudy}" Command="{Binding ShowPageCommand}" CommandParameter="Study" ToolTip.Tip="{x:Static local:UiText.TipNavStudy}" />
             <Button Classes="nav" Classes.selected="{Binding IsOperationSelected}" Content="{x:Static local:UiText.NavOperation}" Command="{Binding ShowPageCommand}" CommandParameter="Operation" ToolTip.Tip="{x:Static local:UiText.TipNavOperation}" />
+            <Button Classes="nav" Classes.selected="{Binding IsResultsSelected}" Content="{x:Static local:UiText.NavResults}" Command="{Binding ShowPageCommand}" CommandParameter="Results" ToolTip.Tip="{x:Static local:UiText.TipNavResults}" />
           </StackPanel>
         </DockPanel>
       </Border>

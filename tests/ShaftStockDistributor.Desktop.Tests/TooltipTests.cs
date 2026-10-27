@@ -22,7 +22,7 @@ public sealed class TooltipTests
 
         var missing = new List<string>();
         int seen = 0;
-        foreach (string page in new[] { "Live", "Layout", "Articles", "Optimizer", "Study", "Operation" })
+        foreach (string page in new[] { "Live", "Layout", "Articles", "Optimizer", "Study", "Operation", "Results" })
         {
             shell.ShowPageCommand.Execute(page);
             Dispatcher.UIThread.RunJobs();
@@ -44,7 +44,7 @@ public sealed class TooltipTests
         }
 
         Assert.True(missing.Count == 0, string.Join("; ", missing));
-        Assert.True(seen >= 45, $"only {seen} buttons were realized");
+        Assert.True(seen >= 48, $"only {seen} buttons were realized");
     }
 
     private static string TipText(object? tip) => tip switch

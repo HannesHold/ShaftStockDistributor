@@ -19,6 +19,8 @@ public interface IFileDialogs
 {
     Task<string?> OpenProjectAsync();
 
+    Task<string?> OpenResultAsync();
+
     Task<string?> SaveProjectAsync(string suggestedName);
 
     Task<string?> SaveTextAsync(string suggestedName, string extension);

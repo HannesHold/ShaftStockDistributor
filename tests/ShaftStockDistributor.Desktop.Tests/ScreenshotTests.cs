@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using ShaftStockDistributor.Core;
 using ShaftStockDistributor.Desktop;
 using ShaftStockDistributor.Desktop.ViewModels;
+using ShaftStockDistributor.Simulation;
 
 namespace ShaftStockDistributor.Desktop.Tests;
 
@@ -122,6 +123,80 @@ public sealed class ScreenshotTests
         Assert.False(shell.Layout.ApplyCommand.CanExecute(null));
         await SettleAsync();
         Save(window, "live-demo-four-shuttles.png", 1280);
+
+        shell.ResetSimulationCommand.Execute(null);
+        Assert.False(shell.IsConfigurationLocked);
+        var recorded = SimulationResultFile.FromSimulation(DashboardProject(), new SimulationOptions
+        {
+            DurationSeconds = 10 * 60,
+            WarmupSeconds = 2 * 60,
+            Seed = 1,
+            Mode = AssignmentMode.Manual
+        }, sampleSeconds: 60);
+        Assert.NotEmpty(recorded.Series);
+        Assert.Contains(recorded.Summary.Shuttles, shuttle => shuttle.Pulls > 0);
+        shell.Results.Show(recorded);
+        Assert.True(shell.Results.Donuts.Count >= 3);
+        shell.ShowPageCommand.Execute("Results");
+        Assert.Equal("Results", shell.Page);
+        await SettleAsync();
+        Save(window, "simulation-result.png", 1280);
+    }
+
+    private static DistributorProject DashboardProject()
+    {
+        var project = new DistributorProject
+        {
+            Name = "Recorded aisle",
+            AssignmentMode = AssignmentMode.Manual,
+            Layout = new LayoutSettings
+            {
+                SegmentCount = 6,
+                LevelsPerSegment = 2,
+                ShaftsPerLevel = 2,
+                ShaftLengthMeters = 20,
+                ShaftPitchMeters = 0.8,
+                LevelHeightMeters = 0.5,
+                SegmentGapMeters = 0.2,
+                TransferDurationSeconds = 8,
+                SafetyDistanceMeters = 1
+            }
+        };
+        project.Articles.Add(Crate("FAST", "Fast mover", AbcClass.A, 320));
+        project.Articles.Add(Crate("MID", "Middle mover", AbcClass.B, 90));
+        project.Articles.Add(Crate("SLOW", "Slow mover", AbcClass.C, 40));
+        ProjectGrid.EnsureDefaultShuttles(project);
+        foreach (var shuttle in project.Shuttles)
+        {
+            shuttle.HorizontalSpeedMetersPerSecond = 0.8;
+            shuttle.VerticalSpeedMetersPerSecond = 0.8;
+            shuttle.HorizontalAccelerationMetersPerSecondSquared = 0;
+            shuttle.VerticalAccelerationMetersPerSecondSquared = 0;
+        }
+
+        ProjectGrid.EnsureFullGrid(project);
+        Assign(project, 1, 1, 1, "FAST");
+        Assign(project, 2, 1, 1, "FAST");
+        Assign(project, 3, 1, 1, "MID");
+        Assign(project, 5, 1, 1, "SLOW");
+        return project;
+    }
+
+    private static Article Crate(string id, string name, AbcClass abc, double inflow) => new()
+    {
+        Id = id,
+        Name = name,
+        Class = abc,
+        InflowCratesPerHour = inflow,
+        CratesPerPallet = 8,
+        Offset = 1,
+        Dimensions = new CrateDimensions { LengthMillimeters = 400, WidthMillimeters = 300, HeightMillimeters = 280 }
+    };
+
+    private static void Assign(DistributorProject project, int segment, int level, int shaft, string articleId)
+    {
+        var slot = project.Assignments.Single(item => item.Segment == segment && item.Level == level && item.Shaft == shaft);
+        slot.ArticleId = articleId;
     }
 
     private static async Task CapturePage(ShellViewModel shell, Window window, string page, string fileName)

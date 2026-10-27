@@ -1,6 +1,6 @@
 # GUI reference
 
-This page lists every control in the desktop window, in the same order as the screen: header, banners, left navigation, then Live demo, Layout, Articles, Optimizer, Scenario study, and Operation.
+This page lists every control in the desktop window, in the same order as the screen: header, banners, left navigation, then Live demo, Layout, Articles, Optimizer, Scenario study, Operation, and Results.
 
 A **setting** is a value you can edit (text box, slider, check box, combo box, or an editable grid cell). A **button** runs a command. Readouts are listed too, and marked as display only. Values that live on the project file but have no control are collected at the end, so this page does not invent a field that is not on screen.
 
@@ -37,6 +37,12 @@ Tooltip: “Start a blank project. Disabled while a simulation is running or pau
 Asks for a project file and loads it. Disabled while a simulation is running or paused.
 
 Tooltip: “Open a project file. Disabled while a simulation is running or paused.”
+
+### Open result
+
+Asks for a `.ssdresult.json` file (plain `.json` is accepted too) and opens Results. It does not start playback, and it does not replace the project you are editing. Stays available while a simulation is running or paused.
+
+Tooltip: “Open a recorded simulation or study. Does not start playback.”
 
 ### Save
 
@@ -181,6 +187,12 @@ Tooltip: “Open the capacity study.”
 Opens the pull queue and event log.
 
 Tooltip: “Open the pull queue and event log.”
+
+### Results
+
+Opens the recorded-result dashboard. Until a file is opened, the page explains that it does not simulate.
+
+Tooltip: “Open the recorded-result dashboard.”
 
 ### Checks
 
@@ -787,6 +799,93 @@ Display only. Recent simulation lines, newest as produced by the session.
 
 Display only. One card per article: color, name, class, inflow in crates per hour, and lost crates.
 
+## Results
+
+A recorded run or capacity study. Nothing on this page is editable, and nothing here starts a simulation. The badge reads “RECORDED RESULT”. The line under the project name repeats the kind, scenario, mode, seed, duration, and warm-up, and says “This is a recorded result, not live playback.”
+
+The workflow that writes the file is in [simulation-results.md](simulation-results.md). The dashboard at 1280×800 is `docs/screenshots/simulation-result.png`.
+
+### Open linked project
+
+Loads the project stored inside the result and opens Live demo so you can edit that copy. The result file on disk is left as it is. Disabled while playback is running or paused, and disabled when the file has no project snapshot.
+
+Tooltip: “Load the project stored in this result so you can edit it. The result file stays unchanged.”
+
+### KPI cards
+
+Display only, once a file is open. Achieved pallets per hour, offered pallets per hour, pulls per shuttle, lost crates, average pull wait, and blocked time.
+
+Tooltips, in that order:
+
+- “Achieved pallets per hour over the measured part of the run.”
+- “Offered pallets per hour from the article inflows.”
+- “Pulls completed by each shuttle, in aisle order.”
+- “Crates that arrived and could not be stored.”
+- “Average time a pull waited before a shuttle took it.”
+- “Seconds shuttles spent blocked during the measured hours.”
+
+### Pallets per hour
+
+Display only, when the file has a time series. Steady pallets per hour across the run. The dashed line is offered. A study file has no series, so this chart stays hidden.
+
+Tooltip: “Steady pallets per hour across the run. The dashed line is offered.”
+
+### Utilization
+
+Display only, one bar per shuttle.
+
+Tooltip: “Utilization of each shuttle during the measured hours.”
+
+### Pull share
+
+Donut. Each shuttle’s share of completed pulls. The center is the pull count. A run with no pulls draws one ring labeled “No pulls”.
+
+Tooltip: “Share of pulls completed by each shuttle.”
+
+### Busy and idle
+
+Donut. Fleet busy time against idle time, from the average shuttle utilization. The center is the busy percent.
+
+Tooltip: “Fleet busy time against idle time, from shuttle utilization.”
+
+### Demand by class
+
+Donut, when the stored project has article inflow. Class A, B, and C share of crate inflow. Hidden when the file has no snapshot or no inflow.
+
+Tooltip: “Class A, B, and C share of crate inflow in the stored project.”
+
+### Achieved and lost crates
+
+Display only, on a study file. Solid lines are achieved pallets per hour (left axis). Dashed lines are lost crates (right axis), against the sweep load. One color per scenario and mode.
+
+Tooltip: “Achieved pallets per hour and lost crates against the study load.”
+
+### Saturation cards
+
+Display only, on a study file. One card per scenario and mode, with the same sustainable rate, saturation load, and reason the study page shows.
+
+### Shuttles
+
+Display only. Shuttle, pulls, and utilization.
+
+### Event log
+
+Display only. The lines stored in the result. A study file usually has none.
+
+### Study means
+
+Display only, on a study file.
+
+| Column | Meaning |
+| --- | --- |
+| Scenario | Scenario name. |
+| Mode | Manual or automatic. |
+| Load | Sweep load, crates per hour. |
+| Offered | Offered pallets per hour. |
+| Achieved | Achieved pallets per hour. |
+| Lost | Lost crates. |
+| Blocked | Seconds shuttles spent blocked. |
+
 ## Stored on the project, not shown
 
 These values are real and are kept when you save. No control edits them. They are listed so a missing box is not mistaken for a forgotten setting.
@@ -805,7 +904,7 @@ These values are real and are kept when you save. No control edits them. They ar
 | Kind | Count |
 | --- | --- |
 | Editable settings (text boxes, slider, check boxes, combo boxes, editable grid columns) | 64 |
-| Buttons, including banner and navigation buttons | 45 |
+| Buttons, including banner and navigation buttons | 48 |
 | Click target that is not a button | 1 (the aisle) |
 
 Every button has a tooltip, and so does the aisle. The six check boxes are settings, and they have tooltips too, because a check box is a pressable control. Disabled buttons still show theirs. Readouts and the stored-but-hidden values above are documented and are not part of the 64.

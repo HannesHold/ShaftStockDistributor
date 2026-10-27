@@ -483,6 +483,69 @@ public sealed class ViewModelTests
         Assert.Equal(after, shell.Project.Articles.Count);
     }
 
+    [Fact]
+    public async Task Opening_a_result_keeps_the_file_when_the_linked_project_is_edited()
+    {
+        var project = ExampleWarehouse.CreateBlank();
+        project.Name = "Linked aisle";
+        project.Articles.Add(new Article
+        {
+            Id = "A1",
+            Name = "Aisle crate",
+            Class = AbcClass.A,
+            InflowCratesPerHour = 120,
+            CratesPerPallet = 20,
+            Offset = 2,
+            Dimensions = new CrateDimensions { LengthMillimeters = 400, WidthMillimeters = 300, HeightMillimeters = 280 }
+        });
+        ProjectGrid.EnsureDefaultShuttles(project);
+        ProjectGrid.EnsureFullGrid(project);
+        project.Assignments[0].ArticleId = "A1";
+        var document = SimulationResultFile.FromSimulation(project, new SimulationOptions
+        {
+            DurationSeconds = 90,
+            WarmupSeconds = 0,
+            Seed = 4,
+            Mode = AssignmentMode.Manual
+        }, sampleSeconds: 45);
+        string directory = Path.Combine(Path.GetTempPath(), "ssd-result-ui-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "run.ssdresult.json");
+        SimulationResultFile.Save(path, document);
+        string onDisk = File.ReadAllText(path);
+
+        var dialogs = new FakeDialogs { ResultToOpen = path };
+        var shell = Harness.CreateShell(dialogs: dialogs);
+        await shell.OpenResultCommand.ExecuteAsync(null);
+
+        Assert.Equal("Results", shell.Page);
+        Assert.True(shell.Results.IsLoaded);
+        Assert.Equal(UiText.ResultOpened, shell.Status);
+        Assert.Contains("Linked aisle", shell.Results.Headline);
+        Assert.NotEqual("—", shell.Results.AchievedText);
+        Assert.True(shell.Results.Donuts.Count >= 2);
+        string achieved = shell.Results.AchievedText;
+        int pulls = document.Summary.Shuttles.Sum(shuttle => shuttle.Pulls);
+
+        Assert.True(shell.Results.OpenLinkedProjectCommand.CanExecute(null));
+        shell.Results.OpenLinkedProjectCommand.Execute(null);
+        Assert.Equal("Live", shell.Page);
+        Assert.Equal("Linked aisle", shell.Project.Name);
+        Assert.Equal(UiText.ResultProjectOpened, shell.Status);
+
+        shell.Project.Name = "Edited in the window";
+        shell.Project.Articles[0].InflowCratesPerHour = 9999;
+        Assert.Equal(achieved, shell.Results.AchievedText);
+        Assert.Equal(pulls, shell.Results.Shuttles.Sum(row => int.Parse(row.Pulls, System.Globalization.CultureInfo.InvariantCulture)));
+        Assert.Equal(onDisk, File.ReadAllText(path));
+        Assert.Equal("Linked aisle", SimulationResultFile.Load(path).Project.Name);
+
+        shell.Live.PlayCommand.Execute(null);
+        Assert.True(shell.IsConfigurationLocked);
+        Assert.False(shell.Results.OpenLinkedProjectCommand.CanExecute(null));
+        Assert.True(shell.OpenResultCommand.CanExecute(null));
+    }
+
     private static string AssignmentSignature(DistributorProject project) =>
         string.Join("|", project.Assignments.Select(slot => $"{slot.Segment}.{slot.Level}.{slot.Shaft}:{slot.ArticleId}:{slot.Pinned}"));
 
@@ -524,7 +587,11 @@ public sealed class ViewModelTests
 
     private sealed class FakeDialogs : IFileDialogs
     {
+        public string? ResultToOpen { get; set; }
+
         public Task<string?> OpenProjectAsync() => Task.FromResult<string?>(null);
+
+        public Task<string?> OpenResultAsync() => Task.FromResult(ResultToOpen);
 
         public Task<string?> SaveProjectAsync(string suggestedName) => Task.FromResult<string?>(null);
 
@@ -565,11 +632,11 @@ public sealed class ViewModelTests
 
     private static class Harness
     {
-        public static ShellViewModel CreateShell(IUiClock? clock = null, IOptimizerService? optimizer = null)
+        public static ShellViewModel CreateShell(IUiClock? clock = null, IOptimizerService? optimizer = null, FakeDialogs? dialogs = null)
         {
             var messenger = new WeakReferenceMessenger();
             var store = new JsonProjectStore();
-            var dialogs = new FakeDialogs();
+            dialogs ??= new FakeDialogs();
             var configurationLock = new ConfigurationLock();
             optimizer ??= new OptimizerService();
             var live = new LiveDemoViewModel(messenger, clock ?? new ManualClock(), optimizer);
@@ -578,7 +645,8 @@ public sealed class ViewModelTests
             var optimizerView = new OptimizerViewModel(messenger, optimizer, configurationLock);
             var study = new StudyViewModel(messenger, new StudyService(), dialogs, configurationLock);
             var operation = new OperationViewModel(messenger);
-            return new ShellViewModel(live, layout, articles, optimizerView, study, operation, messenger, store, dialogs, configurationLock);
+            var results = new ResultViewModel(messenger, configurationLock);
+            return new ShellViewModel(live, layout, articles, optimizerView, study, operation, results, messenger, store, dialogs, configurationLock);
         }
     }
 }

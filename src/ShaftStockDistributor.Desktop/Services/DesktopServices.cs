@@ -23,6 +23,8 @@ public sealed class AvaloniaFileDialogs : IFileDialogs
 {
     public Task<string?> OpenProjectAsync() => PickOpen("json");
 
+    public Task<string?> OpenResultAsync() => PickOpenResult();
+
     public Task<string?> SaveProjectAsync(string suggestedName) => PickSave(suggestedName, "json");
 
     public Task<string?> SaveTextAsync(string suggestedName, string extension) => PickSave(suggestedName, extension);
@@ -42,6 +44,29 @@ public sealed class AvaloniaFileDialogs : IFileDialogs
             FileTypeFilter = new[]
             {
                 new FilePickerFileType("Project") { Patterns = new[] { "*." + extension } }
+            }
+        });
+        return files.Count == 0 ? null : files[0].TryGetLocalPath();
+    }
+
+    private static async Task<string?> PickOpenResult()
+    {
+        var window = Window();
+        if (window is null)
+        {
+            return null;
+        }
+
+        var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            AllowMultiple = false,
+            Title = UiText.OpenResult,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Simulation result")
+                {
+                    Patterns = new[] { "*.ssdresult.json", "*.json" }
+                }
             }
         });
         return files.Count == 0 ? null : files[0].TryGetLocalPath();

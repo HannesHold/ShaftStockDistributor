@@ -1,0 +1,178 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ShaftStockDistributor.Desktop.ViewModels"
+             xmlns:local="using:ShaftStockDistributor.Desktop"
+             xmlns:controls="using:ShaftStockDistributor.Desktop.Controls"
+             xmlns:dg="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.DataGrid"
+             x:Class="ShaftStockDistributor.Desktop.Views.ResultView"
+             x:DataType="vm:ResultViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="10">
+      <Grid ColumnDefinitions="*,Auto">
+        <StackPanel Spacing="4">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{x:Static local:UiText.NavResults}" Classes="h1" VerticalAlignment="Center" />
+            <Border Classes="badge" IsVisible="{Binding IsLoaded}" VerticalAlignment="Center">
+              <TextBlock Text="{x:Static local:UiText.ResultBadge}" />
+            </Border>
+          </StackPanel>
+          <TextBlock Text="{Binding Headline}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Detail}" Classes="muted" TextWrapping="Wrap" />
+        </StackPanel>
+        <Button Grid.Column="1"
+                VerticalAlignment="Center"
+                Content="{x:Static local:UiText.OpenLinkedProject}"
+                Command="{Binding OpenLinkedProjectCommand}"
+                ToolTip.Tip="{x:Static local:UiText.TipOpenLinkedProject}" />
+      </Grid>
+
+      <Border Classes="card" IsVisible="{Binding IsEmpty}" Padding="16">
+        <TextBlock Text="{x:Static local:UiText.ResultEmpty}" TextWrapping="Wrap" />
+      </Border>
+
+      <UniformGrid Columns="6" IsVisible="{Binding IsLoaded}">
+        <Border Classes="card" Margin="0,0,8,0" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipAchievedCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.PalletsPerHour}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding AchievedText}" FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,8,0" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipOfferedCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.Offered}" Classes="muted" FontSize="11" />
+            <TextBlock Text="{Binding OfferedText}" FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,8,0" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipPullCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.Pulls}" Classes="muted" FontSize="11" />
+            <TextBlock Text="{Binding PullsText}" FontSize="18" FontWeight="Bold" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,8,0" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipLostCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.LostCrates}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding LostText}" FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Margin="0,0,8,0" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipWaitCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.AverageWait}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding WaitText}" FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card" Padding="8,6" ToolTip.Tip="{x:Static local:UiText.TipBlockedCard}">
+          <StackPanel>
+            <TextBlock Text="{x:Static local:UiText.Blocked}" Classes="muted" FontSize="11" />
+            <TextBlock Text="{Binding BlockedText}" FontSize="18" FontWeight="Bold" />
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <Grid ColumnDefinitions="*,320" ColumnSpacing="8" IsVisible="{Binding IsLoaded}">
+        <Border Classes="card" Padding="8" IsVisible="{Binding HasSeries}" ToolTip.Tip="{x:Static local:UiText.TipPalletsChart}">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultPalletsChart}" FontWeight="SemiBold" Margin="4,0,0,4" />
+            <controls:RateChart Height="168"
+                                Samples="{Binding RateSamples}"
+                                Offered="{Binding OfferedRate}"
+                                SpanMinutes="{Binding ChartSpanMinutes}" />
+          </DockPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="card" Padding="8" IsVisible="{Binding HasUtilization}" ToolTip.Tip="{x:Static local:UiText.TipUtilizationChart}">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultUtilization}" FontWeight="SemiBold" Margin="4,0,0,4" />
+            <controls:UtilizationChart Height="168" Bars="{Binding UtilizationBars}" />
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <ItemsControl ItemsSource="{Binding Donuts}" IsVisible="{Binding IsLoaded}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Columns="3" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ResultDonut">
+            <Border Classes="card" Margin="0,0,8,0" Padding="8" ToolTip.Tip="{Binding Tip}">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" FontWeight="SemiBold" Margin="4,0,0,4" />
+                <controls:DonutChart Height="148" Slices="{Binding Slices}" Center="{Binding Center}" />
+              </DockPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Border Classes="card" Padding="8" IsVisible="{Binding HasStudy}" ToolTip.Tip="{x:Static local:UiText.TipStudyChart}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultStudyChart}" FontWeight="SemiBold" Margin="4,0,0,4" />
+          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultStudyChartHint}" Classes="muted" Margin="4,0,0,4" TextWrapping="Wrap" />
+          <controls:LoadChart Height="200" Points="{Binding LoadPoints}" />
+        </DockPanel>
+      </Border>
+
+      <ItemsControl ItemsSource="{Binding Saturations}" IsVisible="{Binding HasStudy}" x:CompileBindings="False">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="card" Margin="0,0,8,8" MaxWidth="360" Padding="10">
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="8" IsVisible="{Binding IsLoaded}" MinHeight="160">
+        <Border Classes="card" Padding="8">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultShuttles}" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <dg:DataGrid x:CompileBindings="False" ItemsSource="{Binding Shuttles}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal" Height="140">
+              <dg:DataGrid.Columns>
+                <dg:DataGridTextColumn Header="Shuttle" Binding="{Binding Shuttle}" Width="*" />
+                <dg:DataGridTextColumn Header="Pulls" Binding="{Binding Pulls}" Width="90" />
+                <dg:DataGridTextColumn Header="Utilization" Binding="{Binding Utilization}" Width="120" />
+              </dg:DataGrid.Columns>
+            </dg:DataGrid>
+          </DockPanel>
+        </Border>
+        <Border Grid.Column="1" Classes="card" Padding="8">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.EventLog}" FontWeight="SemiBold" Margin="0,0,0,6" />
+            <ScrollViewer MaxHeight="140">
+              <ItemsControl ItemsSource="{Binding Events}" x:CompileBindings="False">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,4" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <Border Classes="card" Padding="8" IsVisible="{Binding HasStudy}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{x:Static local:UiText.ResultStudyTable}" FontWeight="SemiBold" Margin="0,0,0,6" />
+          <dg:DataGrid x:CompileBindings="False" ItemsSource="{Binding StudyRows}" AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="Horizontal" Height="160">
+            <dg:DataGrid.Columns>
+              <dg:DataGridTextColumn Header="Scenario" Binding="{Binding Scenario}" Width="*" MinWidth="140" />
+              <dg:DataGridTextColumn Header="Mode" Binding="{Binding Mode}" Width="140" />
+              <dg:DataGridTextColumn Header="Load" Binding="{Binding Load}" Width="80" />
+              <dg:DataGridTextColumn Header="Offered" Binding="{Binding Offered}" Width="90" />
+              <dg:DataGridTextColumn Header="Achieved" Binding="{Binding Achieved}" Width="100" />
+              <dg:DataGridTextColumn Header="Lost" Binding="{Binding Lost}" Width="70" />
+              <dg:DataGridTextColumn Header="Blocked" Binding="{Binding Blocked}" Width="90" />
+            </dg:DataGrid.Columns>
+          </dg:DataGrid>
+        </DockPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

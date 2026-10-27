@@ -14,5 +14,6 @@
     <ProjectReference Include="..\..\src\ShaftStockDistributor.Optimizer\ShaftStockDistributor.Optimizer.csproj" />
     <ProjectReference Include="..\..\src\ShaftStockDistributor.Operations\ShaftStockDistributor.Operations.csproj" />
     <ProjectReference Include="..\..\src\ShaftStockDistributor.Simulation\ShaftStockDistributor.Simulation.csproj" />
+    <ProjectReference Include="..\..\src\ShaftStockDistributor.Cli\ShaftStockDistributor.Cli.csproj" />
   </ItemGroup>
 </Project>

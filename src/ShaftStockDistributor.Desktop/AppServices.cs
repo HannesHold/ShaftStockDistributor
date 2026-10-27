@@ -24,6 +24,7 @@ public static class AppServices
         services.AddSingleton<OptimizerViewModel>();
         services.AddSingleton<StudyViewModel>();
         services.AddSingleton<OperationViewModel>();
+        services.AddSingleton<ResultViewModel>();
         services.AddSingleton<ShellViewModel>();
     }
 }

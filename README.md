@@ -42,6 +42,8 @@ Headless Skia captures of the main window. `live-demo.png` is the two-shuttle ai
 
 ![Scenario study chart](docs/screenshots/scenario-study.png)
 
+![Recorded result dashboard](docs/screenshots/simulation-result.png)
+
 ## Projects
 
 | Project | Role |
@@ -77,9 +79,11 @@ Command line:
 ```bash
 dotnet run --project src/ShaftStockDistributor.Cli -- sample --out samples/example-warehouse.json
 dotnet run --project src/ShaftStockDistributor.Cli -- optimize --project samples/example-warehouse.json
-dotnet run --project src/ShaftStockDistributor.Cli -- simulate --project samples/example-warehouse.json --hours 2.5 --warmup 1 --seed 1 --mode Manual
-dotnet run --project src/ShaftStockDistributor.Cli -- study --project samples/example-warehouse.json --compare-modes --csv samples/example-study.csv
+dotnet run --project src/ShaftStockDistributor.Cli -- simulate --project samples/example-warehouse.json --hours 2.5 --warmup 1 --seed 1 --mode Manual --out-result samples/example-run.ssdresult.json
+dotnet run --project src/ShaftStockDistributor.Cli -- study --project samples/example-warehouse.json --compare-modes --csv samples/example-study.csv --out-result samples/example-study.ssdresult.json
 ```
+
+`--out-result` writes a self-contained `.ssdresult.json`. Open it with **Open result** in the desktop app. The Results page shows that recorded run and does not simulate again. The format, the charts, and the workflow are in [docs/simulation-results.md](docs/simulation-results.md).
 
 `--no-optimize` keeps the assignment already stored in the file. The study re-optimizes once per scenario unless you pass that flag.
 

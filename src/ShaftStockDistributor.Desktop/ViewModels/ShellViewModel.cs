@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using ShaftStockDistributor.Core;
 using ShaftStockDistributor.Desktop.Abstractions;
 using ShaftStockDistributor.Optimizer;
+using ShaftStockDistributor.Simulation;
 
 namespace ShaftStockDistributor.Desktop.ViewModels;
 
@@ -24,6 +25,7 @@ public partial class ShellViewModel : ObservableObject
         OptimizerViewModel optimizer,
         StudyViewModel study,
         OperationViewModel operation,
+        ResultViewModel results,
         IMessenger messenger,
         IProjectStore store,
         IFileDialogs dialogs,
@@ -35,6 +37,7 @@ public partial class ShellViewModel : ObservableObject
         Optimizer = optimizer;
         Study = study;
         Operation = operation;
+        Results = results;
         _live = live;
         _lock = configurationLock;
         _messenger = messenger;
@@ -42,6 +45,12 @@ public partial class ShellViewModel : ObservableObject
         _dialogs = dialogs;
         CurrentPage = live;
         messenger.Register<ProjectChangedMessage>(this, (_, message) => Note(message.Project));
+        messenger.Register<OpenLinkedProjectMessage>(this, (_, message) =>
+        {
+            Adopt(message.Project);
+            ShowPage("Live");
+            Status = UiText.ResultProjectOpened;
+        });
         _live.PropertyChanged += OnLivePropertyChanged;
         _lock.PropertyChanged += (_, _) => OnPropertyChanged(nameof(IsConfigurationLocked));
         Adopt(PrepareExample(store));
@@ -60,6 +69,8 @@ public partial class ShellViewModel : ObservableObject
     public StudyViewModel Study { get; }
 
     public OperationViewModel Operation { get; }
+
+    public ResultViewModel Results { get; }
 
     public ObservableCollection<string> Issues { get; } = new();
 
@@ -82,6 +93,7 @@ public partial class ShellViewModel : ObservableObject
     public bool IsOptimizerSelected => Page == "Optimizer";
     public bool IsStudySelected => Page == "Study";
     public bool IsOperationSelected => Page == "Operation";
+    public bool IsResultsSelected => Page == "Results";
 
     public static DistributorProject PrepareExample(IProjectStore store)
     {
@@ -101,6 +113,7 @@ public partial class ShellViewModel : ObservableObject
             "Optimizer" => Optimizer,
             "Study" => Study,
             "Operation" => Operation,
+            "Results" => Results,
             _ => Live
         };
         OnPropertyChanged(nameof(IsLiveSelected));
@@ -109,6 +122,7 @@ public partial class ShellViewModel : ObservableObject
         OnPropertyChanged(nameof(IsOptimizerSelected));
         OnPropertyChanged(nameof(IsStudySelected));
         OnPropertyChanged(nameof(IsOperationSelected));
+        OnPropertyChanged(nameof(IsResultsSelected));
     }
 
     [RelayCommand(CanExecute = nameof(CanStartDemo))]
@@ -170,6 +184,27 @@ public partial class ShellViewModel : ObservableObject
 
         Adopt(_store.Load(path));
         Status = UiText.StatusReady;
+    }
+
+    [RelayCommand]
+    private async Task OpenResultAsync()
+    {
+        string? path = await _dialogs.OpenResultAsync();
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            Results.Show(SimulationResultFile.Load(path));
+            ShowPage("Results");
+            Status = UiText.ResultOpened;
+        }
+        catch (Exception exception) when (exception is InvalidDataException or IOException or System.Text.Json.JsonException)
+        {
+            Status = exception.Message;
+        }
     }
 
     [RelayCommand]

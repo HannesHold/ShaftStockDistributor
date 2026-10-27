@@ -260,6 +260,43 @@ public static class UiText
     public static string TipReoptimize => S();
     public static string TipCompareModes => S();
     public static string TipLostRule => S();
+    public static string NavResults => S();
+    public static string OpenResult => S();
+    public static string OpenLinkedProject => S();
+    public static string ResultBadge => S();
+    public static string ResultEmpty => S();
+    public static string ResultRecorded => S();
+    public static string ResultOpened => S();
+    public static string ResultProjectOpened => S();
+    public static string ResultRunKind => S();
+    public static string ResultStudyKind => S();
+    public static string ResultPalletsChart => S();
+    public static string ResultPullDonut => S();
+    public static string ResultBusyDonut => S();
+    public static string ResultDemandDonut => S();
+    public static string ResultUtilization => S();
+    public static string ResultStudyChart => S();
+    public static string ResultStudyChartHint => S();
+    public static string ResultShuttles => S();
+    public static string ResultStudyTable => S();
+    public static string ResultNoPulls => S();
+    public static string ResultBusy => S();
+    public static string ResultIdle => S();
+    public static string TipOpenResult => S();
+    public static string TipNavResults => S();
+    public static string TipOpenLinkedProject => S();
+    public static string TipPalletsChart => S();
+    public static string TipPullDonut => S();
+    public static string TipBusyDonut => S();
+    public static string TipDemandDonut => S();
+    public static string TipUtilizationChart => S();
+    public static string TipStudyChart => S();
+    public static string TipAchievedCard => S();
+    public static string TipOfferedCard => S();
+    public static string TipPullCard => S();
+    public static string TipLostCard => S();
+    public static string TipWaitCard => S();
+    public static string TipBlockedCard => S();
 
     public static string FormatIssue(ShaftStockDistributor.Core.ValidationIssue issue)
     {

@@ -64,25 +64,37 @@ public static class Program
 
     private static int Simulate(string[] args)
     {
-        var project = Load(args);
+        string path = ProjectPath(args);
+        var project = ProjectSerializer.Load(path);
         double hours = Parse(Value(args, "--hours"), 2.5);
         double warmup = Parse(Value(args, "--warmup"), 1);
         int seed = (int)Parse(Value(args, "--seed"), 1);
         var mode = Enum.TryParse<AssignmentMode>(Value(args, "--mode"), true, out var parsed) ? parsed : project.AssignmentMode;
-        var result = SimulationSession.Run(project, new SimulationOptions
+        var options = new SimulationOptions
         {
             DurationSeconds = hours * 3600,
             WarmupSeconds = warmup * 3600,
             Seed = seed,
             Mode = mode
-        });
-        PrintResult(result);
+        };
+        string? resultPath = Value(args, "--out-result");
+        if (resultPath is null)
+        {
+            PrintResult(SimulationSession.Run(project, options));
+            return 0;
+        }
+
+        var document = SimulationResultFile.FromSimulation(project, options, path);
+        SimulationResultFile.Save(resultPath, document);
+        PrintDocument(document);
+        Console.WriteLine($"Wrote {resultPath}");
         return 0;
     }
 
     private static int Study(string[] args)
     {
-        var project = Load(args);
+        string path = ProjectPath(args);
+        var project = ProjectSerializer.Load(path);
         var request = new StudyRequest
         {
             MinCratesPerHour = Parse(Value(args, "--min"), project.Study.MinCratesPerHour),
@@ -125,6 +137,13 @@ public static class Program
             Console.WriteLine($"Wrote {csv}");
         }
 
+        string? resultPath = Value(args, "--out-result");
+        if (resultPath is not null)
+        {
+            SimulationResultFile.Save(resultPath, SimulationResultFile.FromStudy(project, request, result, path));
+            Console.WriteLine($"Wrote {resultPath}");
+        }
+
         return 0;
     }
 
@@ -146,7 +165,17 @@ public static class Program
         Console.WriteLine($"Controller jobs {result.ControllerPullJobs}, hardware jobs {result.HardwarePullJobs}");
     }
 
-    private static DistributorProject Load(string[] args)
+    private static void PrintDocument(SimulationResultDocument document)
+    {
+        var summary = document.Summary;
+        Console.WriteLine($"Pallets {summary.Pallets:0.00} ({summary.AchievedPalletsPerHour:0.00} per hour), offered {summary.OfferedPalletsPerHour:0.00} per hour");
+        Console.WriteLine("Pulls " + string.Join(", ", summary.Shuttles.Select(shuttle => $"shuttle {shuttle.Number} {shuttle.Pulls}")));
+        Console.WriteLine("Utilization " + string.Join(", ", summary.Shuttles.Select(shuttle => $"shuttle {shuttle.Number} {shuttle.Utilization:P1}")));
+        Console.WriteLine($"Pull wait average {summary.AveragePullWaitSeconds:0.0} s, max {summary.MaxPullWaitSeconds:0.0} s");
+        Console.WriteLine($"Blocked {summary.BlockedSeconds:0.0} s, lost crates {summary.LostCrates}, overflowing shafts {summary.OverflowingShafts}");
+    }
+
+    private static string ProjectPath(string[] args)
     {
         string? path = Value(args, "--project") ?? Value(args, "-p");
         if (path is null)
@@ -154,8 +183,10 @@ public static class Program
             throw new InvalidOperationException("Pass --project <file>.");
         }
 
-        return ProjectSerializer.Load(path);
+        return path;
     }
+
+    private static DistributorProject Load(string[] args) => ProjectSerializer.Load(ProjectPath(args));
 
     private static string? Value(string[] args, string name)
     {
@@ -190,8 +221,8 @@ public static class Program
         Console.WriteLine("""
             shaftstock sample [--out file]
             shaftstock optimize --project file [--out file]
-            shaftstock simulate --project file [--hours 2.5] [--warmup 1] [--seed 1] [--mode Automatic|Manual]
-            shaftstock study --project file [--min 300] [--max 4000] [--step 500] [--reps 3] [--hours 2.5] [--warmup 1] [--iterations 120] [--compare-modes] [--no-optimize] [--csv file]
+            shaftstock simulate --project file [--hours 2.5] [--warmup 1] [--seed 1] [--mode Automatic|Manual] [--out-result file.ssdresult.json]
+            shaftstock study --project file [--min 300] [--max 4000] [--step 500] [--reps 3] [--hours 2.5] [--warmup 1] [--iterations 120] [--compare-modes] [--no-optimize] [--csv file] [--out-result file.ssdresult.json]
             """);
     }
 }

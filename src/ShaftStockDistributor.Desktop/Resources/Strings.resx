@@ -273,4 +273,41 @@
   <data name="TipReoptimize" xml:space="preserve"><value>Assign shafts again for each scenario and load before simulating it.</value></data>
   <data name="TipCompareModes" xml:space="preserve"><value>Run every load in both manual and automatic assignment.</value></data>
   <data name="TipLostRule" xml:space="preserve"><value>Treat any lost crate as saturation.</value></data>
+  <data name="NavResults" xml:space="preserve"><value>Results</value></data>
+  <data name="OpenResult" xml:space="preserve"><value>Open result</value></data>
+  <data name="OpenLinkedProject" xml:space="preserve"><value>Open linked project</value></data>
+  <data name="ResultBadge" xml:space="preserve"><value>RECORDED RESULT</value></data>
+  <data name="ResultEmpty" xml:space="preserve"><value>Open a simulation result to inspect a finished run. This page does not simulate.</value></data>
+  <data name="ResultRecorded" xml:space="preserve"><value>This is a recorded result, not live playback.</value></data>
+  <data name="ResultOpened" xml:space="preserve"><value>Opened a recorded result. Playback was not started.</value></data>
+  <data name="ResultProjectOpened" xml:space="preserve"><value>Opened the project stored in the result. The result file was not changed.</value></data>
+  <data name="ResultRunKind" xml:space="preserve"><value>Simulation</value></data>
+  <data name="ResultStudyKind" xml:space="preserve"><value>Capacity study</value></data>
+  <data name="ResultPalletsChart" xml:space="preserve"><value>Pallets per hour</value></data>
+  <data name="ResultPullDonut" xml:space="preserve"><value>Pull share</value></data>
+  <data name="ResultBusyDonut" xml:space="preserve"><value>Busy and idle</value></data>
+  <data name="ResultDemandDonut" xml:space="preserve"><value>Demand by class</value></data>
+  <data name="ResultUtilization" xml:space="preserve"><value>Utilization</value></data>
+  <data name="ResultStudyChart" xml:space="preserve"><value>Achieved and lost crates</value></data>
+  <data name="ResultStudyChartHint" xml:space="preserve"><value>Solid lines are achieved pallets per hour. Dashed lines are lost crates, on the right axis.</value></data>
+  <data name="ResultShuttles" xml:space="preserve"><value>Shuttles</value></data>
+  <data name="ResultStudyTable" xml:space="preserve"><value>Study means</value></data>
+  <data name="ResultNoPulls" xml:space="preserve"><value>No pulls</value></data>
+  <data name="ResultBusy" xml:space="preserve"><value>Busy</value></data>
+  <data name="ResultIdle" xml:space="preserve"><value>Idle</value></data>
+  <data name="TipOpenResult" xml:space="preserve"><value>Open a recorded simulation or study. Does not start playback.</value></data>
+  <data name="TipNavResults" xml:space="preserve"><value>Open the recorded-result dashboard.</value></data>
+  <data name="TipOpenLinkedProject" xml:space="preserve"><value>Load the project stored in this result so you can edit it. The result file stays unchanged.</value></data>
+  <data name="TipPalletsChart" xml:space="preserve"><value>Steady pallets per hour across the run. The dashed line is offered.</value></data>
+  <data name="TipPullDonut" xml:space="preserve"><value>Share of pulls completed by each shuttle.</value></data>
+  <data name="TipBusyDonut" xml:space="preserve"><value>Fleet busy time against idle time, from shuttle utilization.</value></data>
+  <data name="TipDemandDonut" xml:space="preserve"><value>Class A, B, and C share of crate inflow in the stored project.</value></data>
+  <data name="TipUtilizationChart" xml:space="preserve"><value>Utilization of each shuttle during the measured hours.</value></data>
+  <data name="TipStudyChart" xml:space="preserve"><value>Achieved pallets per hour and lost crates against the study load.</value></data>
+  <data name="TipAchievedCard" xml:space="preserve"><value>Achieved pallets per hour over the measured part of the run.</value></data>
+  <data name="TipOfferedCard" xml:space="preserve"><value>Offered pallets per hour from the article inflows.</value></data>
+  <data name="TipPullCard" xml:space="preserve"><value>Pulls completed by each shuttle, in aisle order.</value></data>
+  <data name="TipLostCard" xml:space="preserve"><value>Crates that arrived and could not be stored.</value></data>
+  <data name="TipWaitCard" xml:space="preserve"><value>Average time a pull waited before a shuttle took it.</value></data>
+  <data name="TipBlockedCard" xml:space="preserve"><value>Seconds shuttles spent blocked during the measured hours.</value></data>
 </root>
